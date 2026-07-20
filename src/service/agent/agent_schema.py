@@ -17,7 +17,9 @@ class AgentActionType(str, Enum):
 class AgentState(BaseModel):
     agent_id: str = Field(min_length=1)
     name: str = Field(min_length=1)
+
     personality: dict[str, int] = Field(default_factory=dict)
+
     needs: dict[str, int] = Field(
         default_factory=lambda: {
             "hunger": 20,
@@ -25,10 +27,14 @@ class AgentState(BaseModel):
             "loneliness": 20,
         }
     )
-    location_id: str = "nest"
+
+    # 기존: "nest"
+    location_id: str = "home"
+
     current_emotion: str = "calm"
     relationships: dict[str, int] = Field(default_factory=dict)
     memories: list[str] = Field(default_factory=list)
+
     goal: str = "오늘 하루를 무사히 보낸다."
     secret: str | None = None
 
