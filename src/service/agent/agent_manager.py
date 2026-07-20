@@ -37,6 +37,12 @@ class AgentManager:
         )
 
         self.max_memories = int(getattr(config, "max_memories", 10) or 10)
+        self.max_action_history = int(
+            getattr(config, "max_action_history", 8) or 8
+        )
+        self.max_dialogue_history = int(
+            getattr(config, "max_dialogue_history", 8) or 8
+        )
         self.use_llm = bool(getattr(config, "use_llm", False))
         self.allow_mock_fallback = bool(
             getattr(config, "allow_mock_fallback", False)
@@ -53,8 +59,9 @@ class AgentManager:
         agents = self._load_default_agents()
         agent_map = {agent.agent_id: agent for agent in agents}
         for agent in agents:
+            previous = dict(agent.relationships)
             agent.relationships = {
-                other.agent_id: 0
+                other.agent_id: int(previous.get(other.agent_id, 0))
                 for other in agents
                 if other.agent_id != agent.agent_id
             }
@@ -74,7 +81,13 @@ class AgentManager:
         if not isinstance(raw_agents, list):
             raise ValueError("Agent sample data must be a list")
 
-        return [AgentState(**agent_data) for agent_data in raw_agents]
+        normalized: list[dict[str, Any]] = []
+        for item in raw_agents:
+            data = dict(item)
+            if "location_id" not in data and "initial_location" in data:
+                data["location_id"] = data.pop("initial_location")
+            normalized.append(data)
+        return [AgentState(**agent_data) for agent_data in normalized]
 
     def choose_actor(self, state: "SimulationState") -> AgentState:
         if not state.agents:
@@ -107,7 +120,8 @@ class AgentManager:
                 "debug",
                 f"[ATM] decision source=ollama agent_id={actor.agent_id} "
                 f"action={action.action.value} narration={action.narration!r} "
-                f"content={action.content!r}",
+                f"content={action.content!r} "
+                f"relationship_delta={action.relationship_delta}",
             )
             return action
         except Exception as exc:
@@ -180,24 +194,79 @@ class AgentManager:
         action.reply_content = reply.content
         action.reply_narration = reply.narration
         action.reply_emotion = reply.emotion
+        action.reply_relationship_delta = reply.relationship_delta
         action.reply_reason = reply.reason
         action.reply_source = reply_source
 
         self._log(
             "debug",
             f"[ATM] reply source={reply_source} speaker={actor.agent_id} "
-            f"listener={target.agent_id} content={reply.content!r}",
+            f"listener={target.agent_id} content={reply.content!r} "
+            f"relationship_delta={reply.relationship_delta}",
         )
         return reply
 
     def remember(self, actor: AgentState, summary: str) -> None:
         actor.memories.append(summary)
-        if len(actor.memories) > self.max_memories:
-            del actor.memories[:-self.max_memories]
+        self._trim(actor.memories, self.max_memories)
+
+    def record_action(self, actor: AgentState, action: AgentAction) -> None:
+        target = action.target_agent_id or action.target_location_id or action.resource
+        compact = action.action.value
+        if target:
+            compact = f"{compact}:{target}"
+        actor.action_history.append(compact)
+        self._trim(actor.action_history, self.max_action_history)
+
+    def record_dialogue(
+        self,
+        *,
+        speaker: AgentState,
+        listener: AgentState,
+        speaker_content: str,
+        listener_content: str | None,
+    ) -> None:
+        speaker_line = self._dialogue_record(
+            self_name=speaker.name,
+            other_name=listener.name,
+            self_content=speaker_content,
+            other_content=listener_content,
+        )
+        listener_line = self._dialogue_record(
+            self_name=listener.name,
+            other_name=speaker.name,
+            self_content=listener_content,
+            other_content=speaker_content,
+        )
+        speaker.dialogue_history.append(speaker_line)
+        listener.dialogue_history.append(listener_line)
+        self._trim(speaker.dialogue_history, self.max_dialogue_history)
+        self._trim(listener.dialogue_history, self.max_dialogue_history)
 
     def set_emotion(self, actor: AgentState, emotion: str) -> None:
+        # 이전 호출부와의 호환성을 위해 남긴다.
         if emotion:
             actor.current_emotion = emotion
+
+    @staticmethod
+    def _dialogue_record(
+        *,
+        self_name: str,
+        other_name: str,
+        self_content: str | None,
+        other_content: str | None,
+    ) -> str:
+        self_text = (self_content or "(말하지 않음)").strip()
+        other_text = (other_content or "(응답 없음)").strip()
+        return (
+            f"{self_name}→{other_name}: {self_text} | "
+            f"{other_name}→{self_name}: {other_text}"
+        )
+
+    @staticmethod
+    def _trim(items: list[Any], limit: int) -> None:
+        if len(items) > limit:
+            del items[:-limit]
 
     def _log(self, level: str, message: str) -> None:
         logger = getattr(self.ctx, "log", None)

@@ -29,6 +29,8 @@ class AgentState(BaseModel):
     current_emotion: str = "calm"
     relationships: dict[str, int] = Field(default_factory=dict)
     memories: list[str] = Field(default_factory=list)
+    action_history: list[str] = Field(default_factory=list)
+    dialogue_history: list[str] = Field(default_factory=list)
     goal: str = "오늘 하루를 무사히 보낸다."
     secret: str | None = None
 
@@ -39,17 +41,18 @@ class AgentAction(BaseModel):
     target_location_id: str | None = None
     resource: str | None = None
 
-    # 행동지문과 대사를 분리한다.
     narration: str = ""
     content: str | None = None
     emotion: str = "neutral"
+    relationship_delta: int = Field(default=0, ge=-3, le=3)
     reason: str = ""
 
-    # 아래 필드는 서버 내부 메타데이터다. LLM 응답 스키마에는 포함하지 않는다.
+    # 서버 내부 메타데이터. LLM 응답 스키마에는 포함하지 않는다.
     source: str = Field(default="unknown", exclude=True)
     reply_content: str | None = Field(default=None, exclude=True)
     reply_narration: str | None = Field(default=None, exclude=True)
     reply_emotion: str | None = Field(default=None, exclude=True)
+    reply_relationship_delta: int = Field(default=0, exclude=True)
     reply_reason: str | None = Field(default=None, exclude=True)
     reply_source: str | None = Field(default=None, exclude=True)
 
@@ -58,6 +61,7 @@ class AgentReply(BaseModel):
     narration: str = Field(min_length=1)
     content: str = Field(min_length=1)
     emotion: str = Field(min_length=1)
+    relationship_delta: int = Field(default=0, ge=-3, le=3)
     reason: str = Field(min_length=1)
 
 
@@ -74,6 +78,11 @@ AGENT_ACTION_JSON_SCHEMA: dict[str, Any] = {
         "narration": {"type": "string"},
         "content": {"type": ["string", "null"]},
         "emotion": {"type": "string"},
+        "relationship_delta": {
+            "type": "integer",
+            "minimum": -3,
+            "maximum": 3,
+        },
         "reason": {"type": "string"},
     },
     "required": [
@@ -84,6 +93,7 @@ AGENT_ACTION_JSON_SCHEMA: dict[str, Any] = {
         "narration",
         "content",
         "emotion",
+        "relationship_delta",
         "reason",
     ],
     "additionalProperties": False,
@@ -96,8 +106,19 @@ AGENT_REPLY_JSON_SCHEMA: dict[str, Any] = {
         "narration": {"type": "string"},
         "content": {"type": "string"},
         "emotion": {"type": "string"},
+        "relationship_delta": {
+            "type": "integer",
+            "minimum": -3,
+            "maximum": 3,
+        },
         "reason": {"type": "string"},
     },
-    "required": ["narration", "content", "emotion", "reason"],
+    "required": [
+        "narration",
+        "content",
+        "emotion",
+        "relationship_delta",
+        "reason",
+    ],
     "additionalProperties": False,
 }

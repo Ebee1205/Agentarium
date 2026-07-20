@@ -42,6 +42,7 @@ class MockAgentActor(BaseAgentActor):
                 target_location_id=target_id,
                 narration=f"{actor.name}가 주변을 살피며 다음 장소로 발걸음을 옮긴다.",
                 emotion="curious",
+                relationship_delta=0,
                 reason="다른 장소에서 새로운 사건을 찾고 싶다.",
             )
 
@@ -50,6 +51,7 @@ class MockAgentActor(BaseAgentActor):
                 action=AgentActionType.OBSERVE,
                 narration=f"{actor.name}가 몸을 낮추고 주변의 작은 변화를 살핀다.",
                 emotion="focused",
+                relationship_delta=0,
                 reason="주변에 달라진 점이 있는지 확인한다.",
             )
 
@@ -61,6 +63,7 @@ class MockAgentActor(BaseAgentActor):
                 narration=f"{actor.name}가 가까이 있는 상대를 향해 조심스럽게 말을 건다.",
                 content=self._dialogue(actor.agent_id, target_id, state.world.tick),
                 emotion="interested",
+                relationship_delta=1,
                 reason="상대가 알고 있는 정보를 확인한다.",
             )
 
@@ -71,6 +74,7 @@ class MockAgentActor(BaseAgentActor):
                 resource=resource,
                 narration=f"{actor.name}가 남은 자원의 양을 확인한 뒤 필요한 만큼 사용한다.",
                 emotion="practical",
+                relationship_delta=0,
                 reason="현재 필요를 해결한다.",
             )
 
@@ -78,6 +82,7 @@ class MockAgentActor(BaseAgentActor):
             action=AgentActionType.WAIT,
             narration=f"{actor.name}가 제자리에 머물며 다른 개체의 움직임을 지켜본다.",
             emotion="calm",
+            relationship_delta=0,
             reason="다른 개체의 행동을 조금 더 관찰한다.",
         )
 
@@ -94,6 +99,7 @@ class MockAgentActor(BaseAgentActor):
             narration=f"{listener.name}가 {speaker.name}의 표정을 살핀 뒤 짧게 대답한다.",
             content="확실한 건 아니지만, 나도 조금 더 살펴볼게.",
             emotion="cautious",
+            relationship_delta=0,
             reason="상대의 질문에 반응하면서도 단정하지 않으려 한다.",
         )
 

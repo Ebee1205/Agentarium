@@ -134,18 +134,26 @@ class WorldManager:
         actor: AgentState,
         action: AgentAction,
     ) -> dict[str, Any]:
-        # event type 분기는 상태 변경을 위한 것이다.
-        # 화면에 보일 문장 자체는 action.narration/content에서 가져온다.
+        state_events: list[dict[str, Any]] = []
+        actor_emotion_event = self._apply_emotion_change(
+            actor=actor,
+            emotion=action.emotion,
+            reason=action.reason,
+            source=action.source,
+        )
+        if actor_emotion_event:
+            state_events.append(actor_emotion_event)
+
         if action.action == AgentActionType.MOVE:
-            return self._move(world, actor, action)
-        if action.action == AgentActionType.TALK:
-            return self._talk(world, agents, actor, action)
-        if action.action == AgentActionType.USE_RESOURCE:
-            return self._use_resource(world, actor, action)
-        if action.action == AgentActionType.OBSERVE:
+            result = self._move(world, actor, action)
+        elif action.action == AgentActionType.TALK:
+            result = self._talk(world, agents, actor, action)
+        elif action.action == AgentActionType.USE_RESOURCE:
+            result = self._use_resource(world, actor, action)
+        elif action.action == AgentActionType.OBSERVE:
             location_name = world.locations[actor.location_id].name
             fallback = f"{actor.name}가 {location_name} 주변을 자세히 관찰했다."
-            return {
+            result = {
                 "event_type": AgentEventType.OBSERVED,
                 "summary": self._summary(action, fallback),
                 "target_id": actor.location_id,
@@ -156,7 +164,12 @@ class WorldManager:
                     "reason": action.reason,
                 },
             }
-        return self._wait_result(actor, action)
+        else:
+            result = self._wait_result(actor, action)
+
+        state_events.extend(result.pop("state_events", []))
+        result["state_events"] = state_events
+        return result
 
     def apply_passive_needs(
         self,
@@ -234,15 +247,37 @@ class WorldManager:
         if not action.content or not action.content.strip():
             return self._wait_result(actor, action)
 
-        relationship_delta = 2 if action.reply_content else 1
-        actor.relationships[target.agent_id] = min(
-            100,
-            actor.relationships.get(target.agent_id, 0) + relationship_delta,
+        state_events: list[dict[str, Any]] = []
+
+        actor_relationship_event = self._apply_relationship_change(
+            actor=actor,
+            target=target,
+            delta=action.relationship_delta,
+            reason=action.reason,
+            source=action.source,
         )
-        target.relationships[actor.agent_id] = min(
-            100,
-            target.relationships.get(actor.agent_id, 0) + relationship_delta,
+        if actor_relationship_event:
+            state_events.append(actor_relationship_event)
+
+        target_relationship_event = self._apply_relationship_change(
+            actor=target,
+            target=actor,
+            delta=action.reply_relationship_delta,
+            reason=action.reply_reason or "상대의 발화에 반응했다.",
+            source=action.reply_source or "unknown",
         )
+        if target_relationship_event:
+            state_events.append(target_relationship_event)
+
+        target_emotion_event = self._apply_emotion_change(
+            actor=target,
+            emotion=action.reply_emotion,
+            reason=action.reply_reason or "상대의 발화에 반응했다.",
+            source=action.reply_source or "unknown",
+        )
+        if target_emotion_event:
+            state_events.append(target_emotion_event)
+
         actor.needs["loneliness"] = max(
             0,
             actor.needs.get("loneliness", 0) - 8,
@@ -251,8 +286,6 @@ class WorldManager:
             0,
             target.needs.get("loneliness", 0) - 5,
         )
-        if action.reply_emotion:
-            target.current_emotion = action.reply_emotion
 
         summary_lines: list[str] = []
         if action.narration.strip():
@@ -269,6 +302,7 @@ class WorldManager:
                 "name": actor.name,
                 "content": action.content.strip(),
                 "emotion": action.emotion,
+                "relationship_delta": action.relationship_delta,
                 "source": action.source,
             }
         ]
@@ -279,6 +313,7 @@ class WorldManager:
                     "name": target.name,
                     "content": action.reply_content.strip(),
                     "emotion": action.reply_emotion,
+                    "relationship_delta": action.reply_relationship_delta,
                     "source": action.reply_source,
                 }
             )
@@ -291,15 +326,18 @@ class WorldManager:
                 "location_id": world.agent_locations.get(actor.agent_id),
                 "narration": action.narration,
                 "dialogue": dialogue,
-                # 기존 클라이언트 호환용
                 "content": action.content,
                 "reply_content": action.reply_content,
                 "emotion": action.emotion,
                 "reply_emotion": action.reply_emotion,
                 "relationship": actor.relationships[target.agent_id],
+                "target_relationship": target.relationships[actor.agent_id],
+                "relationship_delta": action.relationship_delta,
+                "reply_relationship_delta": action.reply_relationship_delta,
                 "reason": action.reason,
                 "reply_reason": action.reply_reason,
             },
+            "state_events": state_events,
         }
 
     def _use_resource(
@@ -368,6 +406,73 @@ class WorldManager:
     def _summary(action: AgentAction, fallback: str) -> str:
         narration = action.narration.strip()
         return narration or fallback
+
+    @staticmethod
+    def _clamp_relationship(value: int) -> int:
+        return max(-100, min(100, int(value)))
+
+    @classmethod
+    def _apply_relationship_change(
+        cls,
+        *,
+        actor: AgentState,
+        target: AgentState,
+        delta: int,
+        reason: str,
+        source: str,
+    ) -> dict[str, Any] | None:
+        requested_delta = max(-3, min(3, int(delta or 0)))
+        previous = int(actor.relationships.get(target.agent_id, 0))
+        current = cls._clamp_relationship(previous + requested_delta)
+        applied_delta = current - previous
+        actor.relationships[target.agent_id] = current
+        if applied_delta == 0:
+            return None
+        return {
+            "event_type": AgentEventType.RELATIONSHIP_CHANGED,
+            "summary": (
+                f"{actor.name}의 {target.name}에 대한 관계가 "
+                f"{previous}에서 {current}(으)로 변했다."
+            ),
+            "actor_id": actor.agent_id,
+            "target_id": target.agent_id,
+            "payload": {
+                "previous": previous,
+                "current": current,
+                "delta": applied_delta,
+                "reason": reason,
+                "source": source,
+            },
+        }
+
+    @staticmethod
+    def _apply_emotion_change(
+        *,
+        actor: AgentState,
+        emotion: str | None,
+        reason: str,
+        source: str,
+    ) -> dict[str, Any] | None:
+        current = str(emotion or "").strip()
+        if not current:
+            return None
+        previous = actor.current_emotion
+        actor.current_emotion = current
+        if previous == current:
+            return None
+        return {
+            "event_type": AgentEventType.EMOTION_CHANGED,
+            "summary": (
+                f"{actor.name}의 감정이 {previous}에서 {current}(으)로 변했다."
+            ),
+            "actor_id": actor.agent_id,
+            "payload": {
+                "previous": previous,
+                "current": current,
+                "reason": reason,
+                "source": source,
+            },
+        }
 
     @classmethod
     def _wait_result(
