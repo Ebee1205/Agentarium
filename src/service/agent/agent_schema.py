@@ -57,6 +57,15 @@ AGENT_ACTION_JSON_SCHEMA: dict[str, Any] = {
         "emotion": {"type": "string"},
         "reason": {"type": "string"},
     },
-    "required": ["action", "emotion", "reason"],
+    # 모든 키를 누락 없이 응답하도록 required에 전부 포함
+    "required": [
+        "action", 
+        "target_agent_id", 
+        "target_location_id", 
+        "resource", 
+        "content", 
+        "emotion", 
+        "reason"
+    ],
     "additionalProperties": False,
 }
