@@ -19,7 +19,6 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from src.app_context import AppContext
 from src.common.responses import build_error_response
-
 from src.service.terrarium.terrarium_router import router as terrarium_router
 
 
@@ -154,12 +153,11 @@ class AppFactory:
         await AppFactory._setup_connections(ctx)
 
         terrarium_cfg = ctx.cfg.terrarium
-        if terrarium_cfg.enabled:
+        if terrarium_cfg.enabled and terrarium_cfg.auto_start:
             state = await ctx.simulation_manager.ensure(
                 terrarium_cfg.default_simulation_id
             )
-            if terrarium_cfg.auto_start:
-                await ctx.simulation_manager.start(state.simulation_id)
+            await ctx.simulation_manager.start(state.simulation_id)
 
         AppFactory._log(ctx, "info", "ATM initialization complete")
 

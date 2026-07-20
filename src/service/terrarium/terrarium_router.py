@@ -100,6 +100,8 @@ async def tick_terrarium(request: Request, simulation_id: str):
     _, manager = _manager_from(request)
     try:
         state = await manager.run_tick(simulation_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     return {"data": model_to_dict(state)}
@@ -140,11 +142,14 @@ async def intervene_terrarium(
     body: ObserverInterventionRequest,
 ):
     _, manager = _manager_from(request)
-    await manager.intervene(
-        simulation_id,
-        summary=body.summary,
-        data=body.data,
-    )
+    try:
+        await manager.intervene(
+            simulation_id,
+            summary=body.summary,
+            data=body.data,
+        )
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     return {"data": {"accepted": True}}
 
 
@@ -177,7 +182,7 @@ async def terrarium_ws_processor(ctx, websocket: WebSocket, message: dict) -> di
         elif event_type == "RUN_TICK":
             state = await manager.run_tick(simulation_id)
         elif event_type == "GET_STATE":
-            state = await manager.ensure(simulation_id)
+            state = manager.get(simulation_id)
         elif event_type == "OBSERVER_INTERVENTION":
             summary = data.get("summary") if isinstance(data, dict) else None
             if not isinstance(summary, str) or not summary.strip():
@@ -229,7 +234,20 @@ async def terrarium_websocket(websocket: WebSocket, simulation_id: str) -> None:
     handler = ctx.ws_handler
     try:
         connection_id = await handler.init(websocket, sid=simulation_id)
-        state = await ctx.simulation_manager.ensure(simulation_id)
+        try:
+            state = ctx.simulation_manager.get(simulation_id)
+        except KeyError as exc:
+            not_found = build_ws_error_response(
+                event_type="TERRARIUM_ERROR",
+                sid=simulation_id,
+                sender=MessageSender.AUTO,
+                status=ResponseStatus.BAD_REQUEST,
+                data={"reason": str(exc)},
+            )
+            await handler.send_to_connection(websocket, not_found)
+            await handler.destroy(websocket, close=True, code=4404)
+            return
+
         connected = build_ws_success_response(
             event_type="SESSION_CONNECTED",
             sid=simulation_id,

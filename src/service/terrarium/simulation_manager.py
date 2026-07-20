@@ -52,9 +52,10 @@ class SimulationManager:
             else self.agent_manager.create_default_agents()
         )
         config = getattr(self.ctx.cfg, "terrarium", None)
-        tick_seconds = request.tick_seconds or float(
+        configured_tick_seconds = request.tick_seconds or float(
             getattr(config, "tick_seconds", 3.0) or 3.0
         )
+        tick_seconds = max(0.2, float(configured_tick_seconds))
         state = SimulationState(
             simulation_id=simulation_id,
             name=request.name,
@@ -92,33 +93,47 @@ class SimulationManager:
             raise ValueError(
                 "Stopped simulation cannot be restarted. Create a new simulation session."
             )
-        if state.status == SimulationStatus.RUNNING:
+
+        task = self.tasks.get(simulation_id)
+        task_alive = task is not None and not task.done()
+        if state.status == SimulationStatus.RUNNING and task_alive:
             return state
 
+        # 상태는 RUNNING인데 이전 Task가 예외로 종료된 경우에도 루프를 복구합니다.
+        was_running_without_task = (
+            state.status == SimulationStatus.RUNNING and not task_alive
+        )
         was_paused = state.status == SimulationStatus.PAUSED
         state.status = SimulationStatus.RUNNING
         state.updated_at = current_timestamp_ms()
-        is_resume = resumed or was_paused
-        await self.event_manager.emit(
-            simulation_id=simulation_id,
-            tick=state.world.tick,
-            event_type=(
-                SystemEventType.SIMULATION_RESUMED
-                if is_resume
-                else SystemEventType.SIMULATION_STARTED
-            ),
-            summary=(
-                "테라리움의 시간이 다시 흐르기 시작했다."
-                if is_resume
-                else "테라리움 시뮬레이션이 시작되었다."
-            ),
-        )
 
-        task = self.tasks.get(simulation_id)
-        if task is None or task.done():
-            self.tasks[simulation_id] = asyncio.create_task(
+        if not was_running_without_task:
+            is_resume = resumed or was_paused
+            await self.event_manager.emit(
+                simulation_id=simulation_id,
+                tick=state.world.tick,
+                event_type=(
+                    SystemEventType.SIMULATION_RESUMED
+                    if is_resume
+                    else SystemEventType.SIMULATION_STARTED
+                ),
+                summary=(
+                    "테라리움의 시간이 다시 흐르기 시작했다."
+                    if is_resume
+                    else "테라리움 시뮬레이션이 시작되었다."
+                ),
+            )
+
+        if not task_alive:
+            loop = asyncio.get_running_loop()
+            self.tasks[simulation_id] = loop.create_task(
                 self._run_loop(simulation_id),
                 name=f"atm-terrarium-{simulation_id}",
+            )
+            self._log(
+                "debug",
+                f"[ATM] auto tick loop started: simulation_id={simulation_id}, "
+                f"interval={state.tick_seconds}s",
             )
         return state
 
@@ -155,7 +170,8 @@ class SimulationManager:
         return state
 
     async def run_tick(self, simulation_id: str) -> SimulationState:
-        state = await self.ensure(simulation_id)
+        # 수동 Tick은 존재하는 세션에만 적용하며 암묵적으로 세션을 만들지 않습니다.
+        state = self.get(simulation_id)
         if state.status == SimulationStatus.STOPPED:
             raise ValueError(
                 "Stopped simulation cannot advance. Create a new simulation session."
@@ -225,7 +241,7 @@ class SimulationManager:
         summary: str,
         data: dict[str, Any] | None = None,
     ) -> None:
-        state = await self.ensure(simulation_id)
+        state = self.get(simulation_id)
         await self.event_manager.emit(
             simulation_id=simulation_id,
             tick=state.world.tick,
@@ -236,7 +252,15 @@ class SimulationManager:
         )
 
     def snapshot(self, simulation_id: str) -> dict[str, Any]:
-        return model_to_dict(self.get(simulation_id))
+        state = self.get(simulation_id)
+        snapshot = model_to_dict(state)
+        task = self.tasks.get(simulation_id)
+        snapshot["auto_tick_active"] = bool(
+            state.status == SimulationStatus.RUNNING
+            and task is not None
+            and not task.done()
+        )
+        return snapshot
 
     async def close(self) -> None:
         tasks = list(self.tasks.values())
@@ -248,6 +272,7 @@ class SimulationManager:
             await asyncio.gather(*tasks, return_exceptions=True)
 
     async def _run_loop(self, simulation_id: str) -> None:
+        current_task = asyncio.current_task()
         try:
             while True:
                 state = self.simulations.get(simulation_id)
@@ -256,15 +281,33 @@ class SimulationManager:
                 if state.status == SimulationStatus.PAUSED:
                     await asyncio.sleep(0.25)
                     continue
+                if state.status != SimulationStatus.RUNNING:
+                    return
+
+                loop = asyncio.get_running_loop()
+                started_at = loop.time()
                 await self.run_tick(simulation_id)
-                await asyncio.sleep(state.tick_seconds)
+
+                # Tick 처리 시간을 제외한 나머지만 대기해 설정 주기를 유지합니다.
+                elapsed = loop.time() - started_at
+                delay = max(0.05, float(state.tick_seconds) - elapsed)
+                await asyncio.sleep(delay)
         except asyncio.CancelledError:
-            raise
+            return
         except Exception as exc:
-            self._log("error", f"[ATM] simulation loop failed: {exc}")
+            self._log(
+                "error",
+                f"[ATM] auto tick loop failed: simulation_id={simulation_id}, "
+                f"error={type(exc).__name__}: {exc!r}",
+            )
             state = self.simulations.get(simulation_id)
-            if state is not None:
-                state.status = SimulationStatus.STOPPED
+            if state is not None and state.status != SimulationStatus.STOPPED:
+                # 종료로 오인하지 않도록 PAUSED로 전환합니다. 재개 버튼으로 복구할 수 있습니다.
+                state.status = SimulationStatus.PAUSED
+                state.updated_at = current_timestamp_ms()
+        finally:
+            if self.tasks.get(simulation_id) is current_task:
+                self.tasks.pop(simulation_id, None)
 
     def _log(self, level: str, message: str) -> None:
         logger = getattr(self.ctx, "log", None)
