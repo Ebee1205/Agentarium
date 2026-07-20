@@ -3,60 +3,1130 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ATM Terrarium</title>
   <style>
-    body { font-family: sans-serif; max-width: 900px; margin: 40px auto; padding: 0 16px; }
-    button { margin-right: 8px; margin-bottom: 12px; }
-    #status { margin-bottom: 16px; }
-    #timeline { list-style: none; padding: 0; }
-    #timeline li { border-left: 3px solid #999; padding: 8px 12px; margin: 8px 0; background: #f5f5f5; }
-    pre { max-height: 280px; overflow: auto; background: #111; color: #eee; padding: 12px; }
+    :root {
+      color-scheme: light;
+      --bg: #f3f5f2;
+      --panel: #ffffff;
+      --panel-muted: #f7f8f6;
+      --line: #d9ded8;
+      --line-strong: #b9c2b9;
+      --text: #1f2922;
+      --text-muted: #6a746d;
+      --accent: #426c50;
+      --accent-soft: #e7efe9;
+      --danger: #9d4141;
+      --warning: #a87023;
+      --shadow: 0 10px 30px rgba(41, 58, 45, 0.08);
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      font-family: Inter, Pretendard, "Noto Sans KR", system-ui, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: var(--text);
+      background: var(--panel);
+      cursor: pointer;
+      transition: 120ms ease;
+    }
+
+    button:hover:not(:disabled) {
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+
+    button.primary {
+      border-color: var(--accent);
+      color: #ffffff;
+      background: var(--accent);
+    }
+
+    button.danger {
+      color: var(--danger);
+    }
+
+    .app {
+      width: min(1440px, 100%);
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 22px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(340px, 0.85fr);
+      gap: 18px;
+      min-height: calc(100vh - 44px);
+    }
+
+    .left-column {
+      display: grid;
+      grid-template-rows: auto minmax(250px, 0.75fr) minmax(360px, 1.25fr);
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .panel {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 700;
+    }
+
+    .panel-subtitle {
+      margin: 3px 0 0;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .toolbar {
+      padding: 18px 20px;
+    }
+
+    .toolbar-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 21px;
+    }
+
+    .brand p {
+      margin: 4px 0 0;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .connection-group {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 28px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 5px 10px;
+      color: var(--text-muted);
+      background: var(--panel-muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .badge::before {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--line-strong);
+      content: "";
+    }
+
+    .badge.connected::before,
+    .badge.running::before {
+      background: #3a8b51;
+    }
+
+    .badge.paused::before {
+      background: var(--warning);
+    }
+
+    .badge.error::before,
+    .badge.stopped::before {
+      background: var(--danger);
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .environment-body {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(110px, 1fr));
+      gap: 12px;
+      padding: 18px 20px 20px;
+    }
+
+    .stat-card {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+      background: var(--panel-muted);
+    }
+
+    .stat-label {
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .stat-value {
+      display: block;
+      margin-top: 5px;
+      overflow: hidden;
+      font-size: 22px;
+      font-weight: 750;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .resource-block,
+    .location-block {
+      grid-column: 1 / -1;
+      border-top: 1px solid var(--line);
+      padding-top: 16px;
+    }
+
+    .section-label {
+      margin: 0 0 10px;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .resource-list,
+    .location-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .resource-pill,
+    .location-pill {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 8px 11px;
+      background: #ffffff;
+      font-size: 13px;
+    }
+
+    .agents-body {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(210px, 1fr));
+      align-items: start;
+      gap: 12px;
+      max-height: 100%;
+      padding: 18px 20px 20px;
+      overflow: auto;
+    }
+
+    .agent-card {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 15px;
+      background: var(--panel-muted);
+    }
+
+    .agent-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .agent-name {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .agent-id {
+      margin-top: 3px;
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+
+    .emotion {
+      border-radius: 999px;
+      padding: 4px 8px;
+      color: var(--accent);
+      background: var(--accent-soft);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .agent-meta {
+      display: grid;
+      grid-template-columns: 72px minmax(0, 1fr);
+      gap: 5px 8px;
+      margin: 13px 0;
+      font-size: 12px;
+    }
+
+    .agent-meta dt {
+      color: var(--text-muted);
+    }
+
+    .agent-meta dd {
+      margin: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .need-row {
+      margin-top: 9px;
+    }
+
+    .need-row-top {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+
+    .need-track {
+      height: 6px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #dfe4df;
+    }
+
+    .need-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: var(--accent);
+    }
+
+    .agent-section {
+      margin-top: 13px;
+    }
+
+    .chip-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .chip {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 7px;
+      background: #ffffff;
+      font-size: 10px;
+    }
+
+    .memory-list {
+      display: grid;
+      gap: 5px;
+      margin: 0;
+      padding: 0;
+      color: var(--text-muted);
+      font-size: 11px;
+      list-style: none;
+    }
+
+    .memory-list li {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .timeline-panel {
+      display: flex;
+      min-height: 0;
+      flex-direction: column;
+    }
+
+    .timeline-actions {
+      display: flex;
+      gap: 7px;
+    }
+
+    .timeline-actions button {
+      padding: 7px 10px;
+      font-size: 12px;
+    }
+
+    .timeline-list {
+      display: flex;
+      min-height: 0;
+      flex: 1;
+      flex-direction: column;
+      gap: 10px;
+      margin: 0;
+      padding: 16px 18px 20px;
+      overflow: auto;
+      list-style: none;
+    }
+
+    .timeline-empty,
+    .empty-state {
+      display: grid;
+      min-height: 120px;
+      place-items: center;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .timeline-item {
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      padding: 13px 14px 13px 17px;
+      background: var(--panel-muted);
+    }
+
+    .timeline-item::before {
+      position: absolute;
+      top: 12px;
+      bottom: 12px;
+      left: 0;
+      width: 4px;
+      border-radius: 0 4px 4px 0;
+      background: var(--line-strong);
+      content: "";
+    }
+
+    .timeline-item[data-category="AGENT"]::before {
+      background: #4d78a8;
+    }
+
+    .timeline-item[data-category="WORLD"]::before {
+      background: #4e855e;
+    }
+
+    .timeline-item[data-category="RESOURCE"]::before {
+      background: #a7752f;
+    }
+
+    .timeline-item[data-category="RELATIONSHIP"]::before {
+      background: #9a5577;
+    }
+
+    .timeline-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 7px;
+    }
+
+    .timeline-category {
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 750;
+      letter-spacing: 0.05em;
+    }
+
+    .timeline-time {
+      color: var(--text-muted);
+      font-size: 10px;
+    }
+
+    .timeline-title {
+      margin: 0 0 4px;
+      font-size: 13px;
+    }
+
+    .timeline-summary {
+      margin: 0;
+      color: #445048;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .timeline-footer {
+      margin-top: 8px;
+      color: var(--text-muted);
+      font-size: 10px;
+    }
+
+    .toast {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      z-index: 10;
+      max-width: min(420px, calc(100vw - 44px));
+      border: 1px solid #e0b2b2;
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: #6f2525;
+      background: #fff2f2;
+      box-shadow: var(--shadow);
+      font-size: 13px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 1050px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .timeline-panel {
+        min-height: 520px;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .app {
+        padding: 12px;
+      }
+
+      .left-column {
+        grid-template-rows: auto auto auto;
+      }
+
+      .toolbar-top {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .connection-group {
+        justify-content: flex-start;
+      }
+
+      .environment-body {
+        grid-template-columns: repeat(2, minmax(110px, 1fr));
+      }
+
+      .agents-body {
+        grid-template-columns: 1fr;
+        max-height: none;
+      }
+    }
   </style>
 </head>
 <body>
-  <div id="status">연결 전</div>
-  <button onclick="send('SIMULATION_START')">시작</button>
-  <button onclick="send('SIMULATION_PAUSE')">일시 정지</button>
-  <button onclick="send('SIMULATION_RESUME')">재개</button>
-  <button onclick="send('RUN_TICK')">1 Tick</button>
-  <button onclick="send('GET_STATE')">상태 조회</button>
-  <button onclick="send('SIMULATION_STOP')">종료</button>
-  <h2>타임라인</h2>
-  <ul id="timeline"></ul>
-  <h2>최근 메시지</h2>
-  <pre id="raw"></pre>
-  <script>
-    const simulationId = 'atm-demo';
-    const ws = new WebSocket(`ws://localhost:9571/ws/terrarium/${simulationId}`);
-    const status = document.getElementById('status');
-    const timeline = document.getElementById('timeline');
-    const raw = document.getElementById('raw');
+  <main class="app">
+    <div class="layout">
+      <section class="left-column">
+        <section class="panel toolbar" aria-labelledby="toolbar-title">
+          <div class="toolbar-top">
+            <div class="brand">
+              <h1 id="toolbar-title">ATM Terrarium</h1>
+              <p id="simulation-label">simulation: atm-demo</p>
+            </div>
+            <div class="connection-group">
+              <span id="rest-status" class="badge">REST 확인 중</span>
+              <span id="ws-status" class="badge">Timeline 연결 전</span>
+              <span id="simulation-status" class="badge">상태 없음</span>
+            </div>
+          </div>
+          <div class="controls" aria-label="시뮬레이션 제어">
+            <button id="start-button" class="primary" data-action="start">시작</button>
+            <button id="pause-button" data-action="pause">일시 정지</button>
+            <button id="resume-button" data-action="resume">재개</button>
+            <button id="tick-button" data-action="tick">1 Tick</button>
+            <button id="refresh-button" data-action="refresh">상태 새로고침</button>
+            <button id="stop-button" class="danger" data-action="stop">종료</button>
+          </div>
+        </section>
 
-    ws.onopen = () => status.textContent = `연결됨: ${simulationId}`;
-    ws.onclose = () => status.textContent = '연결 종료';
-    ws.onerror = () => status.textContent = '연결 오류';
-    ws.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      raw.textContent = JSON.stringify(message, null, 2);
-      if (message.hd?.type === 'TIMELINE_EVENT') {
-        const item = document.createElement('li');
-        const data = message.bd.data.event;
-        item.textContent = `[${data.tick}] ${data.summary}`;
-        timeline.prepend(item);
-      }
+        <section class="panel" aria-labelledby="environment-title">
+          <header class="panel-header">
+            <div>
+              <h2 id="environment-title" class="panel-title">환경 및 자원 상태</h2>
+              <p class="panel-subtitle">REST API를 2초마다 조회해 갱신합니다.</p>
+            </div>
+            <span id="updated-at" class="badge">갱신 전</span>
+          </header>
+          <div id="environment" class="environment-body">
+            <div class="empty-state">상태 데이터를 기다리는 중입니다.</div>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="agents-title">
+          <header class="panel-header">
+            <div>
+              <h2 id="agents-title" class="panel-title">Agent 정보</h2>
+              <p class="panel-subtitle">위치, 감정, 욕구, 관계와 최근 기억을 표시합니다.</p>
+            </div>
+            <span id="agent-count" class="badge">0 agents</span>
+          </header>
+          <div id="agents" class="agents-body">
+            <div class="empty-state">Agent 데이터를 기다리는 중입니다.</div>
+          </div>
+        </section>
+      </section>
+
+      <aside class="panel timeline-panel" aria-labelledby="timeline-title">
+        <header class="panel-header">
+          <div>
+            <h2 id="timeline-title" class="panel-title">타임라인</h2>
+            <p class="panel-subtitle">초기 기록은 REST로 불러오고 신규 이벤트는 WebSocket으로 수신합니다.</p>
+          </div>
+          <div class="timeline-actions">
+            <button id="reload-timeline-button" type="button">다시 불러오기</button>
+            <button id="clear-timeline-button" type="button">화면 비우기</button>
+          </div>
+        </header>
+        <ol id="timeline" class="timeline-list">
+          <li class="timeline-empty">아직 발생한 이벤트가 없습니다.</li>
+        </ol>
+      </aside>
+    </div>
+  </main>
+
+  <div id="toast" class="toast hidden" role="alert"></div>
+
+  <script>
+    const query = new URLSearchParams(window.location.search);
+    const API_BASE = (query.get('api') || 'http://localhost:9571').replace(/\/$/, '');
+    const SIMULATION_ID = query.get('simulation') || 'atm-demo';
+    const STATE_POLL_INTERVAL_MS = 2000;
+    const MAX_TIMELINE_ITEMS = 200;
+
+    const elements = {
+      restStatus: document.getElementById('rest-status'),
+      wsStatus: document.getElementById('ws-status'),
+      simulationStatus: document.getElementById('simulation-status'),
+      simulationLabel: document.getElementById('simulation-label'),
+      updatedAt: document.getElementById('updated-at'),
+      environment: document.getElementById('environment'),
+      agents: document.getElementById('agents'),
+      agentCount: document.getElementById('agent-count'),
+      timeline: document.getElementById('timeline'),
+      toast: document.getElementById('toast'),
+      buttons: {
+        start: document.getElementById('start-button'),
+        pause: document.getElementById('pause-button'),
+        resume: document.getElementById('resume-button'),
+        tick: document.getElementById('tick-button'),
+        refresh: document.getElementById('refresh-button'),
+        stop: document.getElementById('stop-button'),
+      },
     };
 
-    function send(type, data = {}) {
-      ws.send(JSON.stringify({
-        hd: {
-          type,
-          timestamp: Date.now(),
-          sid: simulationId,
-          mid: `web_${crypto.randomUUID()}`,
-          sender: 'TESTER'
-        },
-        bd: { data }
-      }));
+    const timelineItems = [];
+    const timelineIds = new Set();
+    let currentState = null;
+    let statePollTimer = null;
+    let websocket = null;
+    let reconnectTimer = null;
+    let toastTimer = null;
+
+    function apiPath(path = '') {
+      return `${API_BASE}/api/v1/terrarium/${encodeURIComponent(SIMULATION_ID)}${path}`;
     }
+
+    async function requestJson(url, options = {}) {
+      const response = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(options.headers || {}),
+        },
+        ...options,
+      });
+
+      let payload = null;
+      try {
+        payload = await response.json();
+      } catch (_) {
+        payload = null;
+      }
+
+      if (!response.ok) {
+        const detail = payload?.detail || payload?.message || `${response.status} ${response.statusText}`;
+        const error = new Error(typeof detail === 'string' ? detail : JSON.stringify(detail));
+        error.status = response.status;
+        throw error;
+      }
+
+      return payload;
+    }
+
+    async function ensureSimulation() {
+      try {
+        await requestJson(apiPath('/state'));
+      } catch (error) {
+        if (error.status !== 404) {
+          throw error;
+        }
+
+        await requestJson(`${API_BASE}/api/v1/terrarium`, {
+          method: 'POST',
+          body: JSON.stringify({
+            simulation_id: SIMULATION_ID,
+            name: 'ATM Terrarium',
+          }),
+        });
+      }
+    }
+
+    async function loadState({ silent = false } = {}) {
+      try {
+        const payload = await requestJson(apiPath('/state'));
+        currentState = payload.data;
+        setRestStatus('REST 연결됨', 'connected');
+        renderState(currentState);
+      } catch (error) {
+        setRestStatus('REST 연결 오류', 'error');
+        if (!silent) {
+          showError(error);
+        }
+      }
+    }
+
+    async function loadTimeline({ silent = false } = {}) {
+      try {
+        const payload = await requestJson(apiPath('/timeline?limit=200'));
+        replaceTimeline(Array.isArray(payload.data) ? payload.data : []);
+      } catch (error) {
+        if (!silent) {
+          showError(error);
+        }
+      }
+    }
+
+    async function controlSimulation(action) {
+      if (action === 'refresh') {
+        await Promise.all([loadState(), loadTimeline({ silent: true })]);
+        return;
+      }
+
+      setButtonsBusy(true);
+      try {
+        const payload = await requestJson(apiPath(`/${action}`), { method: 'POST' });
+        if (payload?.data) {
+          currentState = payload.data;
+          renderState(currentState);
+        }
+        await loadState({ silent: true });
+      } catch (error) {
+        showError(error);
+      } finally {
+        setButtonsBusy(false);
+      }
+    }
+
+    function connectTimeline() {
+      if (websocket && [WebSocket.OPEN, WebSocket.CONNECTING].includes(websocket.readyState)) {
+        return;
+      }
+
+      clearTimeout(reconnectTimer);
+      const wsBase = API_BASE.replace(/^http/, 'ws');
+      websocket = new WebSocket(`${wsBase}/ws/terrarium/${encodeURIComponent(SIMULATION_ID)}`);
+      setWsStatus('Timeline 연결 중', '');
+
+      websocket.onopen = () => {
+        setWsStatus('Timeline 연결됨', 'connected');
+      };
+
+      websocket.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data);
+          handleWsMessage(message);
+        } catch (error) {
+          console.warn('Invalid WebSocket message', error);
+        }
+      };
+
+      websocket.onerror = () => {
+        setWsStatus('Timeline 연결 오류', 'error');
+      };
+
+      websocket.onclose = () => {
+        setWsStatus('Timeline 재연결 대기', 'error');
+        reconnectTimer = setTimeout(connectTimeline, 3000);
+      };
+    }
+
+    function handleWsMessage(message) {
+      const type = message?.hd?.type;
+      const data = message?.bd?.data || {};
+
+      if (type === 'SESSION_CONNECTED') {
+        if (data.simulation) {
+          currentState = data.simulation;
+          renderState(currentState);
+        }
+        if (Array.isArray(data.recent_timeline)) {
+          replaceTimeline(data.recent_timeline);
+        }
+        return;
+      }
+
+      if (type === 'TIMELINE_EVENT') {
+        const item = data.timeline || eventToTimeline(data.event);
+        if (item) {
+          addTimelineItem(item, { prepend: true });
+        }
+        loadState({ silent: true });
+      }
+    }
+
+    function eventToTimeline(event) {
+      if (!event) {
+        return null;
+      }
+
+      return {
+        timeline_id: event.event_id,
+        tick: event.tick,
+        category: classifyEvent(event.type),
+        source_event_type: event.type,
+        title: event.type || '이벤트',
+        summary: event.summary,
+        actor_id: event.actor_id,
+        target_id: event.target_id,
+        created_at: event.created_at,
+      };
+    }
+
+    function classifyEvent(type = '') {
+      if (type === 'RELATIONSHIP_CHANGED') return 'RELATIONSHIP';
+      if (type === 'RESOURCE_CHANGED') return 'RESOURCE';
+      if (type.startsWith('AGENT_')) return 'AGENT';
+      if (['WORLD_EVENT', 'NEED_CHANGED'].includes(type)) return 'WORLD';
+      return 'SYSTEM';
+    }
+
+    function renderState(state) {
+      if (!state) {
+        return;
+      }
+
+      const status = String(state.status || 'UNKNOWN').toUpperCase();
+      elements.simulationLabel.textContent = `${state.name || 'ATM Terrarium'} · ${state.simulation_id || SIMULATION_ID}`;
+      elements.simulationStatus.textContent = status;
+      elements.simulationStatus.className = `badge ${status.toLowerCase()}`;
+      elements.updatedAt.textContent = state.updated_at
+        ? `갱신 ${formatDateTime(state.updated_at)}`
+        : '갱신 시각 없음';
+
+      renderEnvironment(state.world || {});
+      renderAgents(state.agents || {}, state.world || {});
+      updateButtonStates(status);
+    }
+
+    function renderEnvironment(world) {
+      const resources = world.resources || {};
+      const locations = world.locations || {};
+      const agentLocations = world.agent_locations || {};
+      const locationCounts = Object.values(agentLocations).reduce((counts, locationId) => {
+        counts[locationId] = (counts[locationId] || 0) + 1;
+        return counts;
+      }, {});
+
+      const stats = [
+        ['Tick', world.tick ?? '-'],
+        ['시간대', world.time_of_day || '-'],
+        ['날씨', world.weather || '-'],
+        ['긴장도', world.tension ?? '-'],
+      ];
+
+      elements.environment.innerHTML = stats.map(([label, value]) => `
+        <article class="stat-card">
+          <span class="stat-label">${escapeHtml(label)}</span>
+          <strong class="stat-value">${escapeHtml(String(value))}</strong>
+        </article>
+      `).join('');
+
+      const resourceEntries = Object.entries(resources);
+      elements.environment.insertAdjacentHTML('beforeend', `
+        <section class="resource-block">
+          <h3 class="section-label">Resources</h3>
+          <div class="resource-list">
+            ${resourceEntries.length
+              ? resourceEntries.map(([name, value]) => `<span class="resource-pill">${escapeHtml(name)} <strong>${escapeHtml(String(value))}</strong></span>`).join('')
+              : '<span class="resource-pill">등록된 자원 없음</span>'}
+          </div>
+        </section>
+      `);
+
+      const locationEntries = Object.entries(locations);
+      elements.environment.insertAdjacentHTML('beforeend', `
+        <section class="location-block">
+          <h3 class="section-label">Locations</h3>
+          <div class="location-list">
+            ${locationEntries.length
+              ? locationEntries.map(([id, location]) => {
+                  const name = location?.name || id;
+                  const count = locationCounts[id] || 0;
+                  return `<span class="location-pill">${escapeHtml(name)} · ${count} agent</span>`;
+                }).join('')
+              : '<span class="location-pill">등록된 장소 없음</span>'}
+          </div>
+        </section>
+      `);
+    }
+
+    function renderAgents(agentMap, world) {
+      const agents = Array.isArray(agentMap) ? agentMap : Object.values(agentMap);
+      const locations = world.locations || {};
+      const nameById = Object.fromEntries(agents.map((agent) => [agent.agent_id, agent.name]));
+
+      elements.agentCount.textContent = `${agents.length} agents`;
+
+      if (!agents.length) {
+        elements.agents.innerHTML = '<div class="empty-state">등록된 Agent가 없습니다.</div>';
+        return;
+      }
+
+      elements.agents.innerHTML = agents.map((agent) => {
+        const location = locations[agent.location_id];
+        const locationName = location?.name || agent.location_id || '-';
+        const needs = Object.entries(agent.needs || {});
+        const relationships = Object.entries(agent.relationships || {});
+        const memories = Array.isArray(agent.memories) ? agent.memories.slice(-3).reverse() : [];
+
+        return `
+          <article class="agent-card">
+            <header class="agent-card-header">
+              <div>
+                <h3 class="agent-name">${escapeHtml(agent.name || agent.agent_id)}</h3>
+                <div class="agent-id">${escapeHtml(agent.agent_id || '-')}</div>
+              </div>
+              <span class="emotion">${escapeHtml(agent.current_emotion || 'neutral')}</span>
+            </header>
+
+            <dl class="agent-meta">
+              <dt>위치</dt><dd>${escapeHtml(locationName)}</dd>
+              <dt>목표</dt><dd>${escapeHtml(agent.goal || '-')}</dd>
+            </dl>
+
+            <section class="agent-section">
+              <h4 class="section-label">Needs</h4>
+              ${needs.length
+                ? needs.map(([name, value]) => renderNeed(name, value)).join('')
+                : '<span class="chip">상태 없음</span>'}
+            </section>
+
+            <section class="agent-section">
+              <h4 class="section-label">Relationships</h4>
+              <div class="chip-list">
+                ${relationships.length
+                  ? relationships.map(([id, value]) => `<span class="chip">${escapeHtml(nameById[id] || id)} ${formatSignedNumber(value)}</span>`).join('')
+                  : '<span class="chip">관계 없음</span>'}
+              </div>
+            </section>
+
+            <section class="agent-section">
+              <h4 class="section-label">Recent memories</h4>
+              <ul class="memory-list">
+                ${memories.length
+                  ? memories.map((memory) => `<li title="${escapeHtml(memory)}">${escapeHtml(memory)}</li>`).join('')
+                  : '<li>아직 기억이 없습니다.</li>'}
+              </ul>
+            </section>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function renderNeed(name, rawValue) {
+      const numeric = Number(rawValue);
+      const value = Number.isFinite(numeric) ? Math.max(0, Math.min(100, numeric)) : 0;
+      return `
+        <div class="need-row">
+          <div class="need-row-top">
+            <span>${escapeHtml(name)}</span>
+            <span>${escapeHtml(String(rawValue))}</span>
+          </div>
+          <div class="need-track"><div class="need-fill" style="width: ${value}%"></div></div>
+        </div>
+      `;
+    }
+
+    function replaceTimeline(items) {
+      timelineItems.length = 0;
+      timelineIds.clear();
+      [...items].reverse().forEach((item) => addTimelineItem(item, { prepend: false, render: false }));
+      renderTimeline();
+    }
+
+    function addTimelineItem(item, { prepend = true, render = true } = {}) {
+      const id = item.timeline_id || item.event_id || `${item.created_at}-${item.tick}-${item.summary}`;
+      if (timelineIds.has(id)) {
+        return;
+      }
+
+      timelineIds.add(id);
+      const normalized = { ...item, timeline_id: id };
+      if (prepend) {
+        timelineItems.unshift(normalized);
+      } else {
+        timelineItems.push(normalized);
+      }
+
+      while (timelineItems.length > MAX_TIMELINE_ITEMS) {
+        const removed = timelineItems.pop();
+        timelineIds.delete(removed.timeline_id);
+      }
+
+      if (render) {
+        renderTimeline();
+      }
+    }
+
+    function renderTimeline() {
+      if (!timelineItems.length) {
+        elements.timeline.innerHTML = '<li class="timeline-empty">아직 발생한 이벤트가 없습니다.</li>';
+        return;
+      }
+
+      elements.timeline.innerHTML = timelineItems.map((item) => {
+        const category = item.category || classifyEvent(item.source_event_type || item.type || '');
+        return `
+          <li class="timeline-item" data-category="${escapeHtml(category)}">
+            <div class="timeline-top">
+              <span class="timeline-category">${escapeHtml(category)}</span>
+              <time class="timeline-time">${formatDateTime(item.created_at)}</time>
+            </div>
+            <h3 class="timeline-title">${escapeHtml(item.title || item.source_event_type || '이벤트')}</h3>
+            <p class="timeline-summary">${escapeHtml(item.summary || '-')}</p>
+            <div class="timeline-footer">Tick ${escapeHtml(String(item.tick ?? '-'))}${renderActorTarget(item)}</div>
+          </li>
+        `;
+      }).join('');
+    }
+
+    function renderActorTarget(item) {
+      const parts = [];
+      if (item.actor_id) parts.push(`actor: ${escapeHtml(item.actor_id)}`);
+      if (item.target_id) parts.push(`target: ${escapeHtml(item.target_id)}`);
+      return parts.length ? ` · ${parts.join(' · ')}` : '';
+    }
+
+    function updateButtonStates(status) {
+      const running = status === 'RUNNING';
+      const paused = status === 'PAUSED';
+      elements.buttons.start.disabled = running || paused;
+      elements.buttons.pause.disabled = !running;
+      elements.buttons.resume.disabled = !paused;
+      elements.buttons.tick.disabled = false;
+      elements.buttons.refresh.disabled = false;
+      elements.buttons.stop.disabled = status === 'STOPPED';
+    }
+
+    function setButtonsBusy(busy) {
+      Object.values(elements.buttons).forEach((button) => {
+        button.disabled = busy;
+      });
+      if (!busy && currentState) {
+        updateButtonStates(String(currentState.status || '').toUpperCase());
+      }
+    }
+
+    function setRestStatus(text, stateClass) {
+      elements.restStatus.textContent = text;
+      elements.restStatus.className = `badge ${stateClass || ''}`.trim();
+    }
+
+    function setWsStatus(text, stateClass) {
+      elements.wsStatus.textContent = text;
+      elements.wsStatus.className = `badge ${stateClass || ''}`.trim();
+    }
+
+    function showError(error) {
+      console.error(error);
+      clearTimeout(toastTimer);
+      elements.toast.textContent = error?.message || String(error);
+      elements.toast.classList.remove('hidden');
+      toastTimer = setTimeout(() => elements.toast.classList.add('hidden'), 5000);
+    }
+
+    function formatDateTime(timestamp) {
+      const numeric = Number(timestamp);
+      if (!Number.isFinite(numeric)) {
+        return '-';
+      }
+      return new Intl.DateTimeFormat('ko-KR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      }).format(new Date(numeric));
+    }
+
+    function formatSignedNumber(value) {
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric)) return String(value);
+      return numeric > 0 ? `+${numeric}` : String(numeric);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    document.querySelectorAll('[data-action]').forEach((button) => {
+      button.addEventListener('click', () => controlSimulation(button.dataset.action));
+    });
+
+    document.getElementById('reload-timeline-button').addEventListener('click', () => loadTimeline());
+    document.getElementById('clear-timeline-button').addEventListener('click', () => replaceTimeline([]));
+
+    async function bootstrap() {
+      try {
+        await ensureSimulation();
+        await Promise.all([loadState(), loadTimeline({ silent: true })]);
+        connectTimeline();
+        statePollTimer = setInterval(() => loadState({ silent: true }), STATE_POLL_INTERVAL_MS);
+      } catch (error) {
+        setRestStatus('REST 연결 오류', 'error');
+        showError(error);
+      }
+    }
+
+    window.addEventListener('beforeunload', () => {
+      clearInterval(statePollTimer);
+      clearTimeout(reconnectTimer);
+      websocket?.close();
+    });
+
+    bootstrap();
   </script>
 </body>
 </html>

@@ -45,6 +45,16 @@ async def get_terrarium(request: Request, simulation_id: str):
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
+@router.get("/api/v1/terrarium/{simulation_id}/state")
+async def get_terrarium_state(request: Request, simulation_id: str):
+    """현재 시뮬레이션의 월드·Agent 상태 전체를 반환합니다."""
+    _, manager = _manager_from(request)
+    try:
+        return {"data": manager.snapshot(simulation_id)}
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
 @router.post("/api/v1/terrarium/{simulation_id}/start")
 async def start_terrarium(request: Request, simulation_id: str):
     _, manager = _manager_from(request)
