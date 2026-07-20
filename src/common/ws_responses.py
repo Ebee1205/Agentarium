@@ -1,4 +1,4 @@
-# src/service/chatbot/chat_responses.py
+# src/common/ws_responses.py
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from uuid import uuid4
 from fastapi.encoders import jsonable_encoder
 
 from src.common.responses import ResponseStatus
-from src.service.chatbot.chat_schema import (
+from src.common.ws_schema import (
     MessageSender,
     WsHeaderSchema,
     WsResponseBodySchema,

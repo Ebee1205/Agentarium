@@ -13,7 +13,6 @@
   </style>
 </head>
 <body>
-  <h1>ATM Terrarium</h1>
   <div id="status">연결 전</div>
   <button onclick="send('SIMULATION_START')">시작</button>
   <button onclick="send('SIMULATION_PAUSE')">일시 정지</button>
@@ -53,7 +52,7 @@
           timestamp: Date.now(),
           sid: simulationId,
           mid: `web_${crypto.randomUUID()}`,
-          sender: 'USER_A'
+          sender: 'TESTER'
         },
         bd: { data }
       }));

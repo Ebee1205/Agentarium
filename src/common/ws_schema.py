@@ -1,4 +1,4 @@
-# src/chatbot/chat_schema.py
+# src/common/ws_schema.py
 
 from __future__ import annotations
 
@@ -13,8 +13,7 @@ class MessageSender(str, Enum):
     """WebSocket 메시지를 생성한 주체입니다."""
 
     AUTO = "AUTO"
-    USER_A = "USER_A"
-    USER_B = "USER_B"
+    TESTER = "TESTER"
 
 
 class WsStatusSchema(BaseModel):

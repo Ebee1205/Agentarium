@@ -16,9 +16,15 @@
     "use_console": true
   },
   "http_config": {
-    "allow_origins": ["*"],
-    "allow_methods": ["*"],
-    "allow_headers": ["*"],
+    "allow_origins": [
+      "*"
+    ],
+    "allow_methods": [
+      "*"
+    ],
+    "allow_headers": [
+      "*"
+    ],
     "allow_credentials": false
   },
   "enable_monitoring": false,
@@ -42,6 +48,17 @@
     "tick_seconds": 3.0,
     "max_events": 200,
     "auto_start": false,
-    "default_simulation_id": "atm-demo"
+    "default_simulation_id": "atm-demo",
+    "use_llm": false,
+    "prompt_path": "src/service/prompts/agent_action.txt",
+    "max_memories": 10,
+    "ticks_per_day": 24,
+    "day_start_hour": 6,
+    "night_start_hour": 18,
+    "initial_food": 30,
+    "initial_water": 30,
+    "hunger_per_tick": 2,
+    "energy_day_cost": 1,
+    "energy_night_cost": 2
   }
 }

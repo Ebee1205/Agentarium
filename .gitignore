@@ -24,3 +24,6 @@ __pycache__/
 src/service/conf/*token*.json
 /py_venv
 /.venv
+
+# macOS
+.DS_Store

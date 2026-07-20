@@ -99,6 +99,17 @@ class TerrariumConfig(BaseModel):
     max_events: int = 200
     auto_start: bool = False
     default_simulation_id: str = "atm-demo"
+    use_llm: bool = False
+    prompt_path: str = "src/service/prompts/agent_action.txt"
+    max_memories: int = 10
+    ticks_per_day: int = 24
+    day_start_hour: int = 6
+    night_start_hour: int = 18
+    initial_food: int = 30
+    initial_water: int = 30
+    hunger_per_tick: int = 2
+    energy_day_cost: int = 1
+    energy_night_cost: int = 2
 
 
 class RAGConfig(BaseModel):
@@ -158,6 +169,7 @@ class AppContext:
         # self.rag_manager: Optional[RAGManager] = None
         self.llm_manager: Optional[LLMManager] = None
         self.event_manager = None
+        self.timeline_service = None
         self.world_manager = None
         self.agent_manager = None
         self.simulation_manager = None
@@ -305,13 +317,18 @@ class AppContext:
             self.log.info("[ATM] terrarium is disabled")
             return
 
-        from src.service.terrarium.agent_manager import AgentManager
+        from src.service.agent.agent_manager import AgentManager
         from src.service.terrarium.event_manager import EventManager
         from src.service.terrarium.simulation_manager import SimulationManager
-        from src.service.terrarium.world_manager import WorldManager
+        from src.service.timeline.timeline_service import TimelineService
+        from src.service.world.world_manager import WorldManager
 
         self.log.debug("+ start init terrarium managers")
-        self.event_manager = EventManager(self)
+        self.timeline_service = TimelineService(self)
+        self.event_manager = EventManager(
+            self,
+            timeline_service=self.timeline_service,
+        )
         self.world_manager = WorldManager(self)
         self.agent_manager = AgentManager(self)
         self.simulation_manager = SimulationManager(

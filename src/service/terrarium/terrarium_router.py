@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query, WebSocket
+from fastapi import APIRouter, HTTPException, Query, Request, WebSocket
 
 from src.common.responses import ResponseStatus
-from src.service.chatbot.chat_responses import (
+from src.common.ws_responses import (
     MessageSender,
     build_ws_error_response,
     build_ws_success_response,
@@ -16,7 +16,6 @@ from src.service.terrarium.terrarium_schema import (
     model_to_dict,
 )
 
-
 router = APIRouter(tags=["terrarium"])
 
 
@@ -25,9 +24,6 @@ def _manager_from(target: Any):
     if ctx is None or getattr(ctx, "simulation_manager", None) is None:
         raise RuntimeError("Terrarium managers are not initialized")
     return ctx, ctx.simulation_manager
-
-
-from fastapi import Request  # noqa: E402
 
 
 @router.post("/api/v1/terrarium")
@@ -102,6 +98,20 @@ async def get_events(
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     return {"data": ctx.event_manager.list_events(simulation_id, limit=limit)}
+
+
+@router.get("/api/v1/terrarium/{simulation_id}/timeline")
+async def get_timeline(
+    request: Request,
+    simulation_id: str,
+    limit: int = Query(default=100, ge=1, le=500),
+):
+    ctx, manager = _manager_from(request)
+    try:
+        manager.get(simulation_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return {"data": ctx.timeline_service.list_items(simulation_id, limit=limit)}
 
 
 @router.post("/api/v1/terrarium/{simulation_id}/interventions")
@@ -208,7 +218,14 @@ async def terrarium_websocket(websocket: WebSocket, simulation_id: str) -> None:
             data={
                 "connection_id": connection_id,
                 "simulation": model_to_dict(state),
-                "recent_events": ctx.event_manager.list_events(simulation_id, limit=20),
+                "recent_events": ctx.event_manager.list_events(
+                    simulation_id,
+                    limit=20,
+                ),
+                "recent_timeline": ctx.timeline_service.list_items(
+                    simulation_id,
+                    limit=20,
+                ),
             },
         )
         if not await handler.send_to_connection(websocket, connected):

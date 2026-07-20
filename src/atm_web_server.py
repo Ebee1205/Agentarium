@@ -120,7 +120,6 @@ class AppFactory:
 
     @staticmethod
     def _register_routes(app: FastAPI) -> None:
-        app.include_router(chatbot_router)
         app.include_router(terrarium_router)
 
         @app.get("/health")

@@ -3,22 +3,23 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
-from src.service.terrarium.agent_manager import AgentManager
+from src.service.agent.agent_manager import AgentManager
 from src.service.terrarium.event_manager import EventManager
 from src.service.terrarium.terrarium_schema import (
     CreateSimulationRequest,
     SimulationState,
     SimulationStatus,
-    TerrariumEventType,
+    SystemEventType,
     current_timestamp_ms,
     generate_id,
     model_to_dict,
 )
-from src.service.terrarium.world_manager import WorldManager
+from src.service.world.world_manager import WorldManager
+from src.service.world.world_schema import WorldEventType
 
 
 class SimulationManager:
-    """ATM 테라리움의 생성, 제어, tick 루프를 관리합니다."""
+    """ATM 테라리움 생성, 제어 및 Tick 루프를 조율합니다."""
 
     def __init__(
         self,
@@ -50,9 +51,9 @@ class SimulationManager:
             if request.agents
             else self.agent_manager.create_default_agents()
         )
-        cfg = getattr(self.ctx.cfg, "terrarium", None)
+        config = getattr(self.ctx.cfg, "terrarium", None)
         tick_seconds = request.tick_seconds or float(
-            getattr(cfg, "tick_seconds", 3.0) or 3.0
+            getattr(config, "tick_seconds", 3.0) or 3.0
         )
         state = SimulationState(
             simulation_id=simulation_id,
@@ -63,10 +64,11 @@ class SimulationManager:
         )
         self.simulations[simulation_id] = state
         self.locks[simulation_id] = asyncio.Lock()
+
         await self.event_manager.emit(
             simulation_id=simulation_id,
             tick=0,
-            event_type=TerrariumEventType.SIMULATION_CREATED,
+            event_type=SystemEventType.SIMULATION_CREATED,
             summary=f"‘{state.name}’ 테라리움이 생성되었다.",
             payload={"agent_ids": list(agents)},
         )
@@ -92,17 +94,18 @@ class SimulationManager:
         was_paused = state.status == SimulationStatus.PAUSED
         state.status = SimulationStatus.RUNNING
         state.updated_at = current_timestamp_ms()
+        is_resume = resumed or was_paused
         await self.event_manager.emit(
             simulation_id=simulation_id,
             tick=state.world.tick,
             event_type=(
-                TerrariumEventType.SIMULATION_RESUMED
-                if resumed or was_paused
-                else TerrariumEventType.SIMULATION_STARTED
+                SystemEventType.SIMULATION_RESUMED
+                if is_resume
+                else SystemEventType.SIMULATION_STARTED
             ),
             summary=(
                 "테라리움의 시간이 다시 흐르기 시작했다."
-                if resumed or was_paused
+                if is_resume
                 else "테라리움 시뮬레이션이 시작되었다."
             ),
         )
@@ -124,24 +127,27 @@ class SimulationManager:
         await self.event_manager.emit(
             simulation_id=simulation_id,
             tick=state.world.tick,
-            event_type=TerrariumEventType.SIMULATION_PAUSED,
+            event_type=SystemEventType.SIMULATION_PAUSED,
             summary="관찰자가 테라리움의 시간을 일시 정지했다.",
         )
         return state
 
     async def stop(self, simulation_id: str) -> SimulationState:
         state = self.get(simulation_id)
+        if state.status == SimulationStatus.STOPPED:
+            return state
         state.status = SimulationStatus.STOPPED
         state.updated_at = current_timestamp_ms()
         await self.event_manager.emit(
             simulation_id=simulation_id,
             tick=state.world.tick,
-            event_type=TerrariumEventType.SIMULATION_STOPPED,
+            event_type=SystemEventType.SIMULATION_STOPPED,
             summary="테라리움 시뮬레이션이 종료되었다.",
         )
         task = self.tasks.pop(simulation_id, None)
         if task and not task.done() and task is not asyncio.current_task():
             task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
         return state
 
     async def run_tick(self, simulation_id: str) -> SimulationState:
@@ -154,16 +160,19 @@ class SimulationManager:
             await self.event_manager.emit(
                 simulation_id=simulation_id,
                 tick=state.world.tick,
-                event_type=TerrariumEventType.TICK_STARTED,
+                event_type=SystemEventType.TICK_STARTED,
                 summary=(
-                    f"Tick {state.world.tick}: "
+                    f"Day {state.world.day}, {state.world.hour:02d}:00 — "
                     f"{state.world.time_of_day.lower()} 시간이 시작되었다."
                 ),
                 payload={
+                    "day": state.world.day,
+                    "hour": state.world.hour,
                     "time_of_day": state.world.time_of_day,
                     "weather": state.world.weather,
                 },
             )
+
             for item in world_events:
                 await self.event_manager.emit(
                     simulation_id=simulation_id,
@@ -174,10 +183,12 @@ class SimulationManager:
                 )
 
             self.world_manager.apply_passive_needs(
-                state.agents, state.world.time_of_day
+                state.agents,
+                state.world.time_of_day,
             )
             actor = self.agent_manager.choose_actor(state)
             action = await self.agent_manager.decide_action(state=state, actor=actor)
+            self.agent_manager.set_emotion(actor, action.emotion)
             result = self.world_manager.resolve_action(
                 world=state.world,
                 agents=state.agents,
@@ -197,7 +208,7 @@ class SimulationManager:
                     "action": action.action.value,
                 },
             )
-        return state
+            return state
 
     async def intervene(
         self,
@@ -210,7 +221,7 @@ class SimulationManager:
         await self.event_manager.emit(
             simulation_id=simulation_id,
             tick=state.world.tick,
-            event_type=TerrariumEventType.WORLD_EVENT,
+            event_type=WorldEventType.WORLD_EVENT,
             summary=summary,
             actor_id="observer",
             payload=data or {},
