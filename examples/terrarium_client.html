@@ -619,7 +619,7 @@
   <script>
     const query = new URLSearchParams(window.location.search);
     const API_BASE = (query.get('api') || 'http://localhost:9571').replace(/\/$/, '');
-    const SIMULATION_ID = query.get('simulation') || 'atm-demo';
+    const INITIAL_SIMULATION_ID = query.get('simulation') || 'atm-demo';
     const STATE_POLL_INTERVAL_MS = 2000;
     const MAX_TIMELINE_ITEMS = 200;
 
@@ -646,14 +646,35 @@
 
     const timelineItems = [];
     const timelineIds = new Set();
+
+    let activeSimulationId = INITIAL_SIMULATION_ID;
     let currentState = null;
     let statePollTimer = null;
     let websocket = null;
     let reconnectTimer = null;
+    let reconnectTimeline = true;
     let toastTimer = null;
 
+    function apiPathFor(simulationId, path = '') {
+      if (!simulationId) {
+        throw new Error('활성 시뮬레이션 세션이 없습니다.');
+      }
+      return `${API_BASE}/api/v1/terrarium/${encodeURIComponent(simulationId)}${path}`;
+    }
+
     function apiPath(path = '') {
-      return `${API_BASE}/api/v1/terrarium/${encodeURIComponent(SIMULATION_ID)}${path}`;
+      return apiPathFor(activeSimulationId, path);
+    }
+
+    function normalizeStatus(value) {
+      const normalized = String(value || 'UNKNOWN').toUpperCase();
+      return normalized.includes('.') ? normalized.split('.').pop() : normalized;
+    }
+
+    function replaceBrowserSessionId(simulationId) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('simulation', simulationId);
+      window.history.replaceState(null, '', url);
     }
 
     async function requestJson(url, options = {}) {
@@ -682,31 +703,88 @@
       return payload;
     }
 
-    async function ensureSimulation() {
+    async function createSimulation(simulationId = null) {
+      const body = {
+        name: 'ATM Terrarium',
+      };
+      if (simulationId) {
+        body.simulation_id = simulationId;
+      }
+
+      const payload = await requestJson(`${API_BASE}/api/v1/terrarium`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+      return payload.data;
+    }
+
+    async function ensureInitialSimulation() {
       try {
-        await requestJson(apiPath('/state'));
+        const payload = await requestJson(apiPath('/state'));
+        return payload.data;
       } catch (error) {
         if (error.status !== 404) {
           throw error;
         }
-
-        await requestJson(`${API_BASE}/api/v1/terrarium`, {
-          method: 'POST',
-          body: JSON.stringify({
-            simulation_id: SIMULATION_ID,
-            name: 'ATM Terrarium',
-          }),
-        });
+        return createSimulation(activeSimulationId);
       }
     }
 
+    async function activateSimulation(state, { clearTimeline = true } = {}) {
+      if (!state?.simulation_id) {
+        throw new Error('새 세션 응답에 simulation_id가 없습니다.');
+      }
+
+      disconnectTimeline({ allowReconnect: false });
+      activeSimulationId = state.simulation_id;
+      currentState = state;
+      replaceBrowserSessionId(activeSimulationId);
+
+      if (clearTimeline) {
+        replaceTimeline([]);
+      }
+      renderState(currentState);
+
+      if (normalizeStatus(currentState.status) === 'STOPPED') {
+        setWsStatus('종료된 세션', 'stopped');
+        return;
+      }
+      connectTimeline();
+    }
+
+    async function createAndStartNewSimulation() {
+      const created = await createSimulation();
+      await activateSimulation(created, { clearTimeline: true });
+
+      const payload = await requestJson(apiPath('/start'), { method: 'POST' });
+      currentState = payload.data;
+      renderState(currentState);
+
+      await Promise.all([
+        loadState({ silent: true }),
+        loadTimeline({ silent: true }),
+      ]);
+    }
+
     async function loadState({ silent = false } = {}) {
+      const requestedSimulationId = activeSimulationId;
+      if (!requestedSimulationId) {
+        return;
+      }
+
       try {
-        const payload = await requestJson(apiPath('/state'));
+        const payload = await requestJson(apiPathFor(requestedSimulationId, '/state'));
+        if (requestedSimulationId !== activeSimulationId) {
+          return;
+        }
+
         currentState = payload.data;
         setRestStatus('REST 연결됨', 'connected');
         renderState(currentState);
       } catch (error) {
+        if (requestedSimulationId !== activeSimulationId) {
+          return;
+        }
         setRestStatus('REST 연결 오류', 'error');
         if (!silent) {
           showError(error);
@@ -715,10 +793,21 @@
     }
 
     async function loadTimeline({ silent = false } = {}) {
+      const requestedSimulationId = activeSimulationId;
+      if (!requestedSimulationId) {
+        return;
+      }
+
       try {
-        const payload = await requestJson(apiPath('/timeline?limit=200'));
+        const payload = await requestJson(apiPathFor(requestedSimulationId, '/timeline?limit=200'));
+        if (requestedSimulationId !== activeSimulationId) {
+          return;
+        }
         replaceTimeline(Array.isArray(payload.data) ? payload.data : []);
       } catch (error) {
+        if (requestedSimulationId !== activeSimulationId) {
+          return;
+        }
         if (!silent) {
           showError(error);
         }
@@ -733,11 +822,26 @@
 
       setButtonsBusy(true);
       try {
+        const status = normalizeStatus(currentState?.status);
+
+        if (action === 'start' && (!currentState || status === 'STOPPED')) {
+          await createAndStartNewSimulation();
+          return;
+        }
+
         const payload = await requestJson(apiPath(`/${action}`), { method: 'POST' });
         if (payload?.data) {
           currentState = payload.data;
           renderState(currentState);
         }
+
+        if (action === 'stop') {
+          await loadTimeline({ silent: true });
+          disconnectTimeline({ allowReconnect: false });
+          setWsStatus('Timeline 연결 종료', 'stopped');
+          return;
+        }
+
         await loadState({ silent: true });
       } catch (error) {
         showError(error);
@@ -747,44 +851,96 @@
     }
 
     function connectTimeline() {
+      if (!activeSimulationId) {
+        return;
+      }
       if (websocket && [WebSocket.OPEN, WebSocket.CONNECTING].includes(websocket.readyState)) {
         return;
       }
 
       clearTimeout(reconnectTimer);
+      reconnectTimeline = true;
+
+      const connectedSimulationId = activeSimulationId;
       const wsBase = API_BASE.replace(/^http/, 'ws');
-      websocket = new WebSocket(`${wsBase}/ws/terrarium/${encodeURIComponent(SIMULATION_ID)}`);
+      const socket = new WebSocket(
+        `${wsBase}/ws/terrarium/${encodeURIComponent(connectedSimulationId)}`
+      );
+      websocket = socket;
       setWsStatus('Timeline 연결 중', '');
 
-      websocket.onopen = () => {
+      socket.onopen = () => {
+        if (socket !== websocket || connectedSimulationId !== activeSimulationId) {
+          socket.close();
+          return;
+        }
         setWsStatus('Timeline 연결됨', 'connected');
       };
 
-      websocket.onmessage = (event) => {
+      socket.onmessage = (event) => {
+        if (socket !== websocket || connectedSimulationId !== activeSimulationId) {
+          return;
+        }
         try {
           const message = JSON.parse(event.data);
-          handleWsMessage(message);
+          handleWsMessage(message, connectedSimulationId);
         } catch (error) {
           console.warn('Invalid WebSocket message', error);
         }
       };
 
-      websocket.onerror = () => {
-        setWsStatus('Timeline 연결 오류', 'error');
+      socket.onerror = () => {
+        if (socket === websocket) {
+          setWsStatus('Timeline 연결 오류', 'error');
+        }
       };
 
-      websocket.onclose = () => {
+      socket.onclose = () => {
+        if (socket === websocket) {
+          websocket = null;
+        }
+
+        const shouldReconnect = (
+          reconnectTimeline
+          && connectedSimulationId === activeSimulationId
+          && normalizeStatus(currentState?.status) !== 'STOPPED'
+        );
+
+        if (!shouldReconnect) {
+          return;
+        }
+
         setWsStatus('Timeline 재연결 대기', 'error');
-        reconnectTimer = setTimeout(connectTimeline, 3000);
+        reconnectTimer = setTimeout(() => {
+          if (connectedSimulationId === activeSimulationId) {
+            connectTimeline();
+          }
+        }, 3000);
       };
     }
 
-    function handleWsMessage(message) {
+    function disconnectTimeline({ allowReconnect = false } = {}) {
+      reconnectTimeline = allowReconnect;
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+
+      const socket = websocket;
+      websocket = null;
+      if (socket && [WebSocket.OPEN, WebSocket.CONNECTING].includes(socket.readyState)) {
+        socket.close(1000, 'session switched');
+      }
+    }
+
+    function handleWsMessage(message, connectedSimulationId) {
+      if (connectedSimulationId !== activeSimulationId) {
+        return;
+      }
+
       const type = message?.hd?.type;
       const data = message?.bd?.data || {};
 
       if (type === 'SESSION_CONNECTED') {
-        if (data.simulation) {
+        if (data.simulation?.simulation_id === activeSimulationId) {
           currentState = data.simulation;
           renderState(currentState);
         }
@@ -831,11 +987,12 @@
 
     function renderState(state) {
       if (!state) {
+        updateButtonStates('UNKNOWN');
         return;
       }
 
-      const status = String(state.status || 'UNKNOWN').toUpperCase();
-      elements.simulationLabel.textContent = `${state.name || 'ATM Terrarium'} · ${state.simulation_id || SIMULATION_ID}`;
+      const status = normalizeStatus(state.status);
+      elements.simulationLabel.textContent = `${state.name || 'ATM Terrarium'} · ${state.simulation_id || activeSimulationId}`;
       elements.simulationStatus.textContent = status;
       elements.simulationStatus.className = `badge ${status.toLowerCase()}`;
       elements.updatedAt.textContent = state.updated_at
@@ -1036,23 +1193,29 @@
       return parts.length ? ` · ${parts.join(' · ')}` : '';
     }
 
-    function updateButtonStates(status) {
+    function updateButtonStates(statusValue) {
+      const status = normalizeStatus(statusValue);
+      const hasSession = Boolean(currentState?.simulation_id && activeSimulationId);
+      const created = status === 'CREATED';
       const running = status === 'RUNNING';
       const paused = status === 'PAUSED';
-      elements.buttons.start.disabled = running || paused;
+      const stopped = status === 'STOPPED';
+
+      elements.buttons.start.textContent = stopped ? '새 세션 시작' : '시작';
+      elements.buttons.start.disabled = hasSession && (running || paused);
       elements.buttons.pause.disabled = !running;
       elements.buttons.resume.disabled = !paused;
-      elements.buttons.tick.disabled = false;
-      elements.buttons.refresh.disabled = false;
-      elements.buttons.stop.disabled = status === 'STOPPED';
+      elements.buttons.tick.disabled = !hasSession || running || stopped;
+      elements.buttons.refresh.disabled = !hasSession;
+      elements.buttons.stop.disabled = !hasSession || !(created || running || paused);
     }
 
     function setButtonsBusy(busy) {
       Object.values(elements.buttons).forEach((button) => {
         button.disabled = busy;
       });
-      if (!busy && currentState) {
-        updateButtonStates(String(currentState.status || '').toUpperCase());
+      if (!busy) {
+        updateButtonStates(currentState?.status || 'UNKNOWN');
       }
     }
 
@@ -1110,9 +1273,12 @@
 
     async function bootstrap() {
       try {
-        await ensureSimulation();
-        await Promise.all([loadState(), loadTimeline({ silent: true })]);
-        connectTimeline();
+        const initialState = await ensureInitialSimulation();
+        await activateSimulation(initialState, { clearTimeline: false });
+        await Promise.all([
+          loadState(),
+          loadTimeline({ silent: true }),
+        ]);
         statePollTimer = setInterval(() => loadState({ silent: true }), STATE_POLL_INTERVAL_MS);
       } catch (error) {
         setRestStatus('REST 연결 오류', 'error');
@@ -1122,8 +1288,7 @@
 
     window.addEventListener('beforeunload', () => {
       clearInterval(statePollTimer);
-      clearTimeout(reconnectTimer);
-      websocket?.close();
+      disconnectTimeline({ allowReconnect: false });
     });
 
     bootstrap();

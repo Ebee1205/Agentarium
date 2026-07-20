@@ -47,7 +47,7 @@
     "enabled": true,
     "tick_seconds": 3.0,
     "max_events": 200,
-    "auto_start": false,
+    "auto_start": true,
     "default_simulation_id": "atm-demo",
     "use_llm": false,
     "prompt_path": "src/service/prompts/agent_action.txt",
