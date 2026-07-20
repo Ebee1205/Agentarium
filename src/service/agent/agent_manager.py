@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from src.service.agent.actors.llm_actor import LLMAgentActor
@@ -13,6 +15,8 @@ if TYPE_CHECKING:
 class AgentManager:
     """Agent 생성, 선택, 행동 결정 및 기억 갱신 담당."""
 
+    SAMPLE_DATA_PATH = Path(__file__).resolve().parent / "data" / "actor-sample-data.json"
+
     def __init__(self, ctx: Any) -> None:
         self.ctx = ctx
         config = getattr(ctx.cfg, "terrarium", None)
@@ -25,29 +29,7 @@ class AgentManager:
         self.llm_actor = LLMAgentActor(ctx, prompt_path=prompt_path)
 
     def create_default_agents(self) -> dict[str, AgentState]:
-        agents = [
-            AgentState(
-                agent_id="mori",
-                name="모리",
-                personality={"curiosity": 90, "sociability": 65, "aggression": 20},
-                goal="테라리움 밖으로 나갈 단서를 찾는다.",
-                secret="연못 아래에서 희미한 빛을 보았다.",
-            ),
-            AgentState(
-                agent_id="dodo",
-                name="도도",
-                personality={"curiosity": 35, "sociability": 70, "aggression": 30},
-                goal="현재의 질서와 공동 자원을 지킨다.",
-                secret="식량 일부를 비상용으로 숨겨 두었다.",
-            ),
-            AgentState(
-                agent_id="ruru",
-                name="루루",
-                personality={"curiosity": 75, "sociability": 45, "aggression": 10},
-                goal="다른 개체들이 감추는 비밀을 수집한다.",
-                secret="외부 관찰자의 신호를 가끔 알아들을 수 있다.",
-            ),
-        ]
+        agents = self._load_default_agents()
         agent_map = {agent.agent_id: agent for agent in agents}
         for agent in agents:
             agent.relationships = {
@@ -56,6 +38,19 @@ class AgentManager:
                 if other.agent_id != agent.agent_id
             }
         return agent_map
+
+    def _load_default_agents(self) -> list[AgentState]:
+        try:
+            with self.SAMPLE_DATA_PATH.open("r", encoding="utf-8") as file:
+                raw_agents = json.load(file)
+        except FileNotFoundError:
+            self._log("warning", f"[ATM] Missing agent sample data: {self.SAMPLE_DATA_PATH}")
+            return []
+
+        if not isinstance(raw_agents, list):
+            raise ValueError("Agent sample data must be a list")
+
+        return [AgentState(**agent_data) for agent_data in raw_agents]
 
     def choose_actor(self, state: "SimulationState") -> AgentState:
         if not state.agents:

@@ -1,0 +1,35 @@
+[
+	{
+		"agent_id": "mori",
+		"name": "모리",
+		"personality": {
+			"curiosity": 90,
+			"sociability": 65,
+			"aggression": 20
+		},
+		"goal": "테라리움 밖으로 나갈 단서를 찾는다.",
+		"secret": "연못 아래에서 희미한 빛을 보았다."
+	},
+	{
+		"agent_id": "dodo",
+		"name": "도도",
+		"personality": {
+			"curiosity": 35,
+			"sociability": 70,
+			"aggression": 30
+		},
+		"goal": "현재의 질서와 공동 자원을 지킨다.",
+		"secret": "식량 일부를 비상용으로 숨겨 두었다."
+	},
+	{
+		"agent_id": "ruru",
+		"name": "루루",
+		"personality": {
+			"curiosity": 75,
+			"sociability": 45,
+			"aggression": 10
+		},
+		"goal": "다른 개체들이 감추는 비밀을 수집한다.",
+		"secret": "외부 관찰자의 신호를 가끔 알아들을 수 있다."
+	}
+]
