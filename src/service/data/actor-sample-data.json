@@ -3,72 +3,84 @@
     "agent_id": "luk",
     "name": "루크",
     "personality": {
-      "curiosity": 85,
-      "sociability": 80,
-      "aggression": 15
+      "hope": 95,
+      "mystical": 85,
+      "empathy": 80,
+      "sociability": 85,
+      "curiosity": 90
     },
     "location_id": "boundary_wall",
-    "goal": "다른 개체들을 설득하여 평화롭게 테라리움의 경계를 탐사한다.",
-    "secret": "밤마다 벽면에서 들려오는 규칙적인 진동 패턴을 해독하고 있다."
+    "goal": "테라리움의 진정한 목적을 이해하고, 갈등을 멈출 평화로운 공존의 길을 찾는다.",
+    "secret": "어둠 속에 숨겨진 낡은 유물을 통해 외부 세계의 거대한 에너지를 흐릿하게나마 느끼고 있다."
   },
   {
     "agent_id": "dd",
     "name": "딘자린",
     "personality": {
-      "curiosity": 25,
-      "sociability": 40,
-      "aggression": 85
+      "loyalty": 95,
+      "pragmatism": 75,
+      "protective": 90,
+      "sociability": 35,
+      "curiosity": 30
     },
     "location_id": "home",
-    "goal": "알 수 없는 위협으로부터 동료들을 최우선으로 보호한다.",
-    "secret": "과거에 테라리움의 천장이 열리는 것을 목격한 적이 있다."
+    "goal": "자신이 거둔 어린 개체(혹은 약자)를 테라리움의 모든 위협으로부터 끝까지 보호한다.",
+    "secret": "과거 테라리움의 참혹한 사고로 얻은 상처가 있으며, 그 이후 절대 타인에게 맨얼굴을 보이지 않는 규율을 스스로 세웠다."
   },
   {
-    "agent_id": "amr",
-    "name": "아머러",
+    "agent_id": "cmn",
+    "name": "청문",
     "personality": {
-      "curiosity": 40,
-      "sociability": 60,
-      "aggression": 50
+      "benevolence": 90,
+      "responsibility": 95,
+      "patience": 85,
+      "sociability": 95,
+      "curiosity": 50
     },
     "location_id": "storage",
-    "goal": "테라리움 내의 제한된 자원을 활용해 생존을 위한 도구와 규율을 만든다.",
-    "secret": "공동 식량 구역 지하에 아무도 모르는 대피용 비밀 통로를 파두었다."
+    "goal": "테라리움 내의 구성원들이 화합하고 번영할 수 있도록 스스로를 희생하여 굳건한 기반을 다진다.",
+    "secret": "겉으로는 온화해 보이나, 테라리움에 다가올 멸망의 징조를 미리 알고 홀로 무거운 짐을 짊어지고 있다."
   },
   {
     "agent_id": "ksn",
     "name": "카시안",
     "personality": {
-      "curiosity": 85,
-      "sociability": 30,
-      "aggression": 75
+      "survival": 95,
+      "ruthless": 75,
+      "resourceful": 90,
+      "sociability": 40,
+      "curiosity": 85
     },
     "location_id": "pond",
-    "goal": "테라리움을 통제하는 시스템의 치명적인 약점을 찾아내어 파괴한다.",
-    "secret": "다른 개체들의 행동을 감시하기 위해 특정 구역들에 교묘한 함정과 표식을 설치해 두었다."
+    "goal": "억압적인 테라리움 시스템에 대항할 결정적인 정보를 수집하고 반란의 불씨를 지핀다.",
+    "secret": "과거 가혹한 환경에서 살아남기 위해 동료를 희생시키거나 배신해야만 했던 어두운 기억을 감추고 있다."
   },
   {
-    "agent_id": "lth",
-    "name": "루선",
+    "agent_id": "isb",
+    "name": "녹림왕",
     "personality": {
-      "curiosity": 90,
-      "sociability": 65,
-      "aggression": 60
+      "charisma": 85,
+      "cunning": 95,
+      "opportunist": 90,
+      "sociability": 85,
+      "curiosity": 70
     },
     "location_id": "home",
-    "goal": "테라리움 내부의 불만을 조장하고 세력을 규합하여 거대한 폭동을 설계한다.",
-    "secret": "테라리움 외부 관찰자의 통신 장비 부품을 하나 훔쳐내어 숨기고 있다."
+    "goal": "테라리움의 혼란을 틈타 세력을 규합하고 가장 큰 이익을 챙길 수 있는 판을 짠다.",
+    "secret": "강력하고 무자비한 지배자라는 소문과 달리, 사실은 치명적인 지병을 앓고 있어 하루하루의 생존이 절박하다."
   },
   {
     "agent_id": "ddr",
     "name": "데드라",
     "personality": {
-      "curiosity": 95,
-      "sociability": 15,
-      "aggression": 85
+      "ambition": 95,
+      "analytical": 95,
+      "ruthless": 85,
+      "sociability": 20,
+      "curiosity": 95
     },
     "location_id": "observation_rock",
-    "goal": "규칙을 어기고 테라리움을 벗어나려는 반항적인 개체들을 빠짐없이 색출해낸다.",
-    "secret": "다른 개체들의 대화와 행동 패턴을 기록한 방대한 관찰 일지를 몰래 작성 중이다."
+    "goal": "테라리움 내의 모든 변칙과 반항의 징후를 철저히 분석하여 완벽한 통제와 질서를 확립한다.",
+    "secret": "시스템의 결함을 덮기 위해 상부(관찰자)에게 보고하지 않은 비공식적인 불법 심문 및 관찰 기록을 몰래 보관 중이다."
   }
 ]
