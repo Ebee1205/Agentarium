@@ -70,6 +70,8 @@ class LLMAgentActor(BaseAgentActor):
                 prompts,
                 placeholders={
                     "agent": model_to_dict(actor),
+                    "speech_rule": model_to_dict(actor.speech_rule),
+                    "act_rule": model_to_dict(actor.act_rule),
                     "world": model_to_dict(state.world),
                     "other_agents": other_agents,
                     "nearby_agents": nearby_agents,
@@ -133,6 +135,8 @@ class LLMAgentActor(BaseAgentActor):
                 placeholders={
                     "speaker": self._public_agent_view(listener, speaker),
                     "listener": model_to_dict(listener),
+                    "speech_rule": model_to_dict(listener.speech_rule),
+                    "act_rule": model_to_dict(listener.act_rule),
                     "dialogue": dialogue,
                     "world": model_to_dict(state.world),
                     "relationship": listener.relationships.get(speaker.agent_id, 0),
@@ -179,6 +183,11 @@ class LLMAgentActor(BaseAgentActor):
         if not action.narration.strip():
             raise ValueError("narration이 비어 있습니다.")
 
+        if action.action in actor.act_rule.forbidden_actions:
+            raise ValueError(
+                f"캐릭터 act_rule에서 금지한 행동입니다: {action.action.value}"
+            )
+
         if action.action == AgentActionType.MOVE:
             target = action.target_location_id
             if target not in state.world.locations:
@@ -197,6 +206,7 @@ class LLMAgentActor(BaseAgentActor):
                 raise ValueError("TALK 대상은 현재 같은 장소에 있어야 합니다.")
             if not action.content or not action.content.strip():
                 raise ValueError("TALK.content가 비어 있습니다.")
+            self._validate_speech_rule(actor, action.content)
             if self._is_recent_duplicate(action.content, actor.dialogue_history):
                 raise ValueError("최근 대화와 지나치게 유사한 TALK.content입니다.")
             last_action = actor.action_history[-1] if actor.action_history else ""
@@ -245,6 +255,7 @@ class LLMAgentActor(BaseAgentActor):
             raise ValueError("응답 Agent가 상대 대사를 그대로 반복했습니다.")
         if self._is_recent_duplicate(reply.content, listener.dialogue_history):
             raise ValueError("응답 Agent가 최근 자신의 대사를 반복했습니다.")
+        self._validate_speech_rule(listener, reply.content)
         if not reply.narration.strip():
             raise ValueError("reply.narration이 비어 있습니다.")
 
@@ -258,7 +269,40 @@ class LLMAgentActor(BaseAgentActor):
             "location_id": agent.location_id,
             "current_emotion": agent.current_emotion,
             "relationship_from_me": viewer.relationships.get(agent.agent_id, 0),
+            "observable_style": {
+                "speech_tones": [item.value for item in agent.speech_rule.tones],
+                "speech_level": agent.speech_rule.speech_level.value,
+                "directness": agent.speech_rule.directness,
+                "conflict_style": agent.act_rule.conflict_style.value,
+            },
         }
+
+    @classmethod
+    def _validate_speech_rule(cls, actor: AgentState, content: str) -> None:
+        text = cls._clean_sentence(content)
+        rule = actor.speech_rule
+
+        if len(text) > rule.max_chars:
+            raise ValueError(
+                f"대사가 speech_rule.max_chars({rule.max_chars})를 초과했습니다."
+            )
+
+        sentence_count = len(
+            [item for item in re.split(r"[.!?。！？]+", text) if item.strip()]
+        )
+        if sentence_count > rule.max_sentences:
+            raise ValueError(
+                "대사 문장 수가 "
+                f"speech_rule.max_sentences({rule.max_sentences})를 초과했습니다."
+            )
+
+        normalized = text.casefold()
+        for phrase in rule.forbidden_phrases:
+            blocked = cls._clean_sentence(phrase)
+            if blocked and blocked.casefold() in normalized:
+                raise ValueError(
+                    f"speech_rule.forbidden_phrases에 포함된 표현입니다: {blocked}"
+                )
 
     @classmethod
     def _clean_action(cls, action: AgentAction) -> None:

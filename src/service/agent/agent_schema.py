@@ -14,10 +14,95 @@ class AgentActionType(str, Enum):
     WAIT = "WAIT"
 
 
+class SpeechTone(str, Enum):
+    NEUTRAL = "neutral"
+    CALM = "calm"
+    WARM = "warm"
+    BLUNT = "blunt"
+    GUARDED = "guarded"
+    PERSUASIVE = "persuasive"
+    ANALYTICAL = "analytical"
+    AUTHORITATIVE = "authoritative"
+    SARCASTIC = "sarcastic"
+    SUSPICIOUS = "suspicious"
+    PROVOCATIVE = "provocative"
+
+
+class SpeechLevel(str, Enum):
+    CASUAL = "casual"
+    NEUTRAL = "neutral"
+    POLITE = "polite"
+    FORMAL = "formal"
+
+
+class SentenceLength(str, Enum):
+    SHORT = "short"
+    MEDIUM = "medium"
+    LONG = "long"
+
+
+class ConflictStyle(str, Enum):
+    AVOID = "avoid"
+    NEGOTIATE = "negotiate"
+    CONFRONT = "confront"
+    MANIPULATE = "manipulate"
+    CONTROL = "control"
+
+
+class DecisionStyle(str, Enum):
+    IMPULSIVE = "impulsive"
+    BALANCED = "balanced"
+    DELIBERATE = "deliberate"
+    OPPORTUNISTIC = "opportunistic"
+
+
+class SpeechRule(BaseModel):
+    """Agent가 대사를 표현하는 방식을 규격화한다."""
+
+    tones: list[SpeechTone] = Field(
+        default_factory=lambda: [SpeechTone.NEUTRAL]
+    )
+    speech_level: SpeechLevel = SpeechLevel.NEUTRAL
+    sentence_length: SentenceLength = SentenceLength.MEDIUM
+    max_sentences: int = Field(default=2, ge=1, le=3)
+    max_chars: int = Field(default=160, ge=20, le=300)
+    directness: int = Field(default=50, ge=0, le=100)
+    emotional_expression: int = Field(default=50, ge=0, le=100)
+    question_tendency: int = Field(default=50, ge=0, le=100)
+    address_style: str = "상황에 맞게 상대를 부른다."
+    verbal_habits: list[str] = Field(default_factory=list)
+    forbidden_phrases: list[str] = Field(default_factory=list)
+
+
+class ActRule(BaseModel):
+    """Agent가 행동을 선택하고 갈등에 대응하는 방식을 규격화한다."""
+
+    initiative: int = Field(default=50, ge=0, le=100)
+    risk_tolerance: int = Field(default=50, ge=0, le=100)
+    cooperation: int = Field(default=50, ge=0, le=100)
+    secrecy: int = Field(default=50, ge=0, le=100)
+    conflict_style: ConflictStyle = ConflictStyle.NEGOTIATE
+    decision_style: DecisionStyle = DecisionStyle.BALANCED
+    action_bias: dict[str, int] = Field(
+        default_factory=lambda: {
+            AgentActionType.TALK.value: 0,
+            AgentActionType.MOVE.value: 0,
+            AgentActionType.OBSERVE.value: 0,
+            AgentActionType.USE_RESOURCE.value: 0,
+            AgentActionType.WAIT.value: 0,
+        }
+    )
+    priorities: list[str] = Field(default_factory=list)
+    conditional_rules: list[str] = Field(default_factory=list)
+    forbidden_actions: list[AgentActionType] = Field(default_factory=list)
+
+
 class AgentState(BaseModel):
     agent_id: str = Field(min_length=1)
     name: str = Field(min_length=1)
     personality: dict[str, int] = Field(default_factory=dict)
+    speech_rule: SpeechRule = Field(default_factory=SpeechRule)
+    act_rule: ActRule = Field(default_factory=ActRule)
     needs: dict[str, int] = Field(
         default_factory=lambda: {
             "hunger": 20,
