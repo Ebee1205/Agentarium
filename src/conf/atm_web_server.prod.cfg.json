@@ -1,42 +1,42 @@
 {
-    "environment": "local",
-    "project_name": "doq_web_server",
+    "environment": "prod",
+    "project_name": "atm_web_server",
     "api_v1_str": "/api/v1",
     "host": "localhost",
     "port": 3000,
-    "secret_key": "changethis-secret-key",
+    "secret_key": "CHANGE_ME_SECRET_KEY",
     "access_token_expire_minutes": 1440,
 
     "http_config": {
-      "allow_origins": ["http://localhost:3000"],
+      "allow_origins": ["https://YOUR_FRONTEND_DOMAIN"],
       "allow_methods": ["*"],
       "allow_headers": ["*"],
       "allow_credentials": true
-    },
-
-    "rmq": {
-      "host": "localhost",
-      "port": 5672,
-      "user": "guest",
-      "password": "guest",
-      "queues": [
-        { "name": "doq-queue", "type": "pub" }
-      ]
     },
     
     "db": {
       "host": "localhost",
       "port": 3306,
-      "user": "guest",
-      "password": "abcd1234",
-      "database": "doq"
+      "user": "atm",
+      "password": "CHANGE_ME_MYSQL_PASSWORD",
+      "database": "atm"
     },
-    
+
+    "rmq": {
+      "host": "localhost",
+      "port": 5672,
+      "user": "atm",
+      "password": "CHANGE_ME_RMQ_PASSWORD",
+      "queues": [
+        { "name": "atm-queue", "type": "pub" }
+      ]
+    },
+
     "redis": {
       "host": "localhost",
       "port": 6379,
       "db": 0,
-      "password": null
+      "password": "CHANGE_ME_REDIS_PASSWORD"
     },
 
     "redis_consumer": {
@@ -46,8 +46,8 @@
     },
 
     "r2": {
-      "account_id": "doq-images",
-      "bucket_name": "doq-images",
+      "account_id": "atm-images",
+      "bucket_name": "atm-images",
       "region": "auto",
       "endpoint_url": "https://2a9b33fa7ea08ae491598e555233bddb.r2.cloudflarestorage.com",
       "public_base_url": "https://pub-a309ad8a0a6e4a629ad982d710e35276.r2.dev",
@@ -56,8 +56,8 @@
     },
 
     "logger": {
-        "level": "debug",
-        "path": "./logs/doq_web_server.log-%DATE%",
+        "level": "info",
+        "path": "./logs/atm_web_server.log-%DATE%",
         "suffix": "%Y-%m-%d",
         "max_bytes": 10485760,
         "max_files": "3d",

@@ -1,14 +1,14 @@
 {
-  "doq_mw_server": {
+  "atm_mw_server": {
     "rmq": {
       "send.frame": {
-        "queue": "doq-queue",
+        "queue": "atm-queue",
         "handler": "src.service.system.system_consumer.handle_system_message",
         "description": "포즈 데이터 수집 및 처리"
       }
     }
   },
-  "doq_web_server": {
+  "atm_web_server": {
     "ws": {
       "chat.message": {
         "websocket": "/v1/session/chat",
