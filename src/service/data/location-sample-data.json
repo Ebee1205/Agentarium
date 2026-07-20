@@ -1,0 +1,17 @@
+[
+	{
+		"location_id": "home",
+		"name": "집",
+		"description": "개체들이 쉬거나 대화하는 안전한 장소"
+	},
+	{
+		"location_id": "pond",
+		"name": "연못",
+		"description": "물을 구하거나 수상한 흔적을 발견할 수 있는 장소"
+	},
+	{
+		"location_id": "storage",
+		"name": "식량 보관소",
+		"description": "공동 식량이 쌓여 있는 장소"
+	}
+]

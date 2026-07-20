@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -18,6 +20,9 @@ class WorldRules(BaseModel):
     energy_night_cost: int = Field(default=2, ge=0)
 
 
+LOCATION_SAMPLE_DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "location-sample-data.json"
+
+
 def load_world_rules(ctx: Any) -> WorldRules:
     config = getattr(getattr(ctx, "cfg", None), "terrarium", None)
     return WorldRules(
@@ -33,20 +38,14 @@ def load_world_rules(ctx: Any) -> WorldRules:
 
 
 def default_locations() -> dict[str, LocationState]:
-    return {
-        "home": LocationState(
-            location_id="home",
-            name="집",
-            description="개체들이 쉬거나 대화하는 안전한 장소",
-        ),
-        "pond": LocationState(
-            location_id="pond",
-            name="연못",
-            description="물을 구하거나 수상한 흔적을 발견할 수 있는 장소",
-        ),
-        "storage": LocationState(
-            location_id="storage",
-            name="식량 보관소",
-            description="공동 식량이 쌓여 있는 장소",
-        ),
-    }
+    try:
+        with LOCATION_SAMPLE_DATA_PATH.open("r", encoding="utf-8") as file:
+            raw_locations = json.load(file)
+    except FileNotFoundError:
+        return {}
+
+    if not isinstance(raw_locations, list):
+        raise ValueError("Location sample data must be a list")
+
+    locations = [LocationState(**location_data) for location_data in raw_locations]
+    return {location.location_id: location for location in locations}

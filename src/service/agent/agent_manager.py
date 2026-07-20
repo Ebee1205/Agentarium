@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 class AgentManager:
     """Agent 생성, 선택, 행동 결정 및 기억 갱신 담당."""
 
-    SAMPLE_DATA_PATH = Path(__file__).resolve().parent / "data" / "actor-sample-data.json"
+    SAMPLE_DATA_PATH = Path("src/service/data/actor-sample-data.json")
 
     def __init__(self, ctx: Any) -> None:
         self.ctx = ctx
