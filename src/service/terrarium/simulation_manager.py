@@ -88,6 +88,10 @@ class SimulationManager:
 
     async def start(self, simulation_id: str, *, resumed: bool = False) -> SimulationState:
         state = await self.ensure(simulation_id)
+        if state.status == SimulationStatus.STOPPED:
+            raise ValueError(
+                "Stopped simulation cannot be restarted. Create a new simulation session."
+            )
         if state.status == SimulationStatus.RUNNING:
             return state
 
@@ -152,6 +156,10 @@ class SimulationManager:
 
     async def run_tick(self, simulation_id: str) -> SimulationState:
         state = await self.ensure(simulation_id)
+        if state.status == SimulationStatus.STOPPED:
+            raise ValueError(
+                "Stopped simulation cannot advance. Create a new simulation session."
+            )
         lock = self.locks.setdefault(simulation_id, asyncio.Lock())
         async with lock:
             world_events = self.world_manager.advance(state.world)

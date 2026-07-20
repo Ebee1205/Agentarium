@@ -58,7 +58,10 @@ async def get_terrarium_state(request: Request, simulation_id: str):
 @router.post("/api/v1/terrarium/{simulation_id}/start")
 async def start_terrarium(request: Request, simulation_id: str):
     _, manager = _manager_from(request)
-    state = await manager.start(simulation_id)
+    try:
+        state = await manager.start(simulation_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     return {"data": model_to_dict(state)}
 
 
@@ -75,7 +78,10 @@ async def pause_terrarium(request: Request, simulation_id: str):
 @router.post("/api/v1/terrarium/{simulation_id}/resume")
 async def resume_terrarium(request: Request, simulation_id: str):
     _, manager = _manager_from(request)
-    state = await manager.start(simulation_id, resumed=True)
+    try:
+        state = await manager.start(simulation_id, resumed=True)
+    except (KeyError, ValueError) as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     return {"data": model_to_dict(state)}
 
 
@@ -92,7 +98,10 @@ async def stop_terrarium(request: Request, simulation_id: str):
 @router.post("/api/v1/terrarium/{simulation_id}/tick")
 async def tick_terrarium(request: Request, simulation_id: str):
     _, manager = _manager_from(request)
-    state = await manager.run_tick(simulation_id)
+    try:
+        state = await manager.run_tick(simulation_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     return {"data": model_to_dict(state)}
 
 
