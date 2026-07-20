@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any
 
-from pydantic import AliasChoices, BaseModel, Field
+from pydantic import BaseModel, Field
 
 
 class AgentActionType(str, Enum):
@@ -17,7 +17,6 @@ class AgentActionType(str, Enum):
 class AgentState(BaseModel):
     agent_id: str = Field(min_length=1)
     name: str = Field(min_length=1)
-
     personality: dict[str, int] = Field(default_factory=dict)
     needs: dict[str, int] = Field(
         default_factory=lambda: {
@@ -26,31 +25,40 @@ class AgentState(BaseModel):
             "loneliness": 20,
         }
     )
-
-    # 새 데이터의 location_id와 기존 데이터의 initial_location을 모두 지원합니다.
-    location_id: str = Field(
-        default="home",
-        validation_alias=AliasChoices("location_id", "initial_location"),
-    )
-
+    location_id: str = "nest"
     current_emotion: str = "calm"
     relationships: dict[str, int] = Field(default_factory=dict)
     memories: list[str] = Field(default_factory=list)
-
     goal: str = "오늘 하루를 무사히 보낸다."
     secret: str | None = None
 
 
 class AgentAction(BaseModel):
     action: AgentActionType
-
     target_agent_id: str | None = None
     target_location_id: str | None = None
     resource: str | None = None
-    content: str | None = None
 
+    # 행동지문과 대사를 분리한다.
+    narration: str = ""
+    content: str | None = None
     emotion: str = "neutral"
     reason: str = ""
+
+    # 아래 필드는 서버 내부 메타데이터다. LLM 응답 스키마에는 포함하지 않는다.
+    source: str = Field(default="unknown", exclude=True)
+    reply_content: str | None = Field(default=None, exclude=True)
+    reply_narration: str | None = Field(default=None, exclude=True)
+    reply_emotion: str | None = Field(default=None, exclude=True)
+    reply_reason: str | None = Field(default=None, exclude=True)
+    reply_source: str | None = Field(default=None, exclude=True)
+
+
+class AgentReply(BaseModel):
+    narration: str = Field(min_length=1)
+    content: str = Field(min_length=1)
+    emotion: str = Field(min_length=1)
+    reason: str = Field(min_length=1)
 
 
 AGENT_ACTION_JSON_SCHEMA: dict[str, Any] = {
@@ -63,6 +71,7 @@ AGENT_ACTION_JSON_SCHEMA: dict[str, Any] = {
         "target_agent_id": {"type": ["string", "null"]},
         "target_location_id": {"type": ["string", "null"]},
         "resource": {"type": ["string", "null"]},
+        "narration": {"type": "string"},
         "content": {"type": ["string", "null"]},
         "emotion": {"type": "string"},
         "reason": {"type": "string"},
@@ -72,9 +81,23 @@ AGENT_ACTION_JSON_SCHEMA: dict[str, Any] = {
         "target_agent_id",
         "target_location_id",
         "resource",
+        "narration",
         "content",
         "emotion",
         "reason",
     ],
+    "additionalProperties": False,
+}
+
+
+AGENT_REPLY_JSON_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "narration": {"type": "string"},
+        "content": {"type": "string"},
+        "emotion": {"type": "string"},
+        "reason": {"type": "string"},
+    },
+    "required": ["narration", "content", "emotion", "reason"],
     "additionalProperties": False,
 }
