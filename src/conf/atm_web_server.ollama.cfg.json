@@ -27,7 +27,7 @@
     "provider": "ollama",
     "model": "kwangsuklee/Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-GGUF:latest",
     "base_url": "http://127.0.0.1:11434",
-    "timeout_seconds": 300,
+    "timeout_seconds": 6000,
     "api_key_env": null
   },
   "rag": {
@@ -43,7 +43,7 @@
     "max_events": 200,
     "auto_start": false,
     "default_simulation_id": "atm-demo",
-    "use_llm": false,
+    "use_llm": true,
     "prompt_path": "src/service/prompts/agent_action.txt",
     "max_memories": 10,
     "ticks_per_day": 24,

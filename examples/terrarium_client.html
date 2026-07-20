@@ -9,21 +9,20 @@
 
     :root {
       color-scheme: light;
-      /* 아기자기하고 따뜻한 파스텔 톤 팔레트 */
-      --bg: #fff5f5;          /* 부드러운 핑크빛 배경 */
+      var(--bg): #fff5f5;
       --panel: #ffffff;
-      --panel-muted: #fff0f2; /* 카드 내부 연한 배경 */
-      --line: #ffd1d8;        /* 테두리 (딸기우유빛) */
+      --panel-muted: #fff0f2;
+      --line: #ffd1d8;
       --line-strong: #ffaebc;
-      --text: #5c4a4d;        /* 진한 초코브라운 (부드러운 대비) */
+      --text: #5c4a4d;
       --text-muted: #9e8488;
-      --accent: #ff8da1;      /* 메인 포인트 컬러 (코랄 핑크) */
+      --accent: #ff8da1;
       --accent-soft: #ffe4e8;
       --danger: #ff7676;
       --warning: #ffbd59;
-      --success: #5cdb95;     /* 산뜻한 민트 */
+      --success: #5cdb95;
       --shadow: 0 8px 24px rgba(255, 141, 161, 0.15);
-      --radius: 24px;         /* 둥글둥글한 모서리 */
+      --radius: 24px;
     }
 
     * {
@@ -37,7 +36,6 @@
       font-family: 'Nunito', Pretendard, "Noto Sans KR", system-ui, sans-serif;
       color: var(--text);
       background: var(--bg);
-      /* 귀여운 도트 패턴 배경 추가 */
       background-image: radial-gradient(var(--line) 2px, transparent 2px);
       background-size: 30px 30px;
     }
@@ -47,7 +45,6 @@
       font: inherit;
     }
 
-    /* 통통 튀는 입체감 있는 버튼 스타일 */
     button {
       border: 2px solid var(--line);
       border-radius: 99px;
@@ -120,7 +117,6 @@
       min-width: 0;
     }
 
-    /* 패널에도 귀여운 테두리와 입체감 적용 */
     .panel {
       min-width: 0;
       border: 3px solid #fff;
@@ -186,7 +182,6 @@
       gap: 10px;
     }
 
-    /* 동글동글한 뱃지 */
     .badge {
       display: inline-flex;
       align-items: center;
@@ -241,7 +236,6 @@
       padding: 20px 24px 24px;
     }
 
-    /* 카드 스타일 (입체감 + 둥글게) */
     .stat-card {
       min-width: 0;
       border: 2px solid var(--line);
@@ -308,29 +302,58 @@
       box-shadow: 0 3px 0 var(--line);
     }
 
+    /* 에이전트 목록: 1열 배치 및 패딩 조정 */
     .agents-body {
       display: grid;
-      grid-template-columns: repeat(3, minmax(210px, 1fr));
+      grid-template-columns: 1fr;
       align-items: start;
-      gap: 16px;
-      max-height: 100%;
-      padding: 20px 24px 24px;
-      overflow: auto;
+      gap: 20px;
+      max-height: 800px;
+      padding: 20px 24px 24px 34px; 
+      overflow-y: auto;
     }
 
-    /* 에이전트 카드 아기자기하게 */
+    /* 말풍선 스타일 에이전트 카드 */
     .agent-card {
+      position: relative;
       min-width: 0;
       border: 2px solid var(--line);
       border-radius: 24px;
-      padding: 20px;
+      padding: 24px;
       background: var(--panel);
       box-shadow: 0 6px 0 var(--line);
       transition: transform 0.2s;
+      
+      /* 내부 요소 가로 배치 */
+      display: grid;
+      grid-template-columns: 240px 1.2fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    /* 말풍선 꼬리 추가 */
+    .agent-card::before {
+      content: "";
+      position: absolute;
+      top: 32px;
+      left: -16px;
+      border-width: 12px 16px 12px 0;
+      border-style: solid;
+      border-color: transparent var(--line) transparent transparent;
+    }
+
+    .agent-card::after {
+      content: "";
+      position: absolute;
+      top: 32px;
+      left: -12px;
+      border-width: 12px 16px 12px 0;
+      border-style: solid;
+      border-color: transparent var(--panel) transparent transparent;
     }
 
     .agent-card:hover {
-      transform: translateY(-4px);
+      transform: translateY(-2px);
     }
 
     .agent-card-header {
@@ -367,7 +390,7 @@
       display: grid;
       grid-template-columns: 50px minmax(0, 1fr);
       gap: 6px 10px;
-      margin: 16px 0;
+      margin: 16px 0 0;
       font-size: 13px;
       font-weight: 600;
       background: var(--panel-muted);
@@ -415,7 +438,7 @@
     }
 
     .agent-section {
-      margin-top: 18px;
+      margin-bottom: 20px;
     }
 
     .chip-list {
@@ -440,17 +463,17 @@
       margin: 0;
       padding: 0;
       color: var(--text-muted);
-      font-size: 12px;
+      font-size: 13px;
       list-style: none;
     }
 
     .memory-list li {
       position: relative;
       padding-left: 14px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      margin-bottom: 6px;
+      line-height: 1.5;
       font-weight: 600;
+      word-break: keep-all; 
     }
 
     .memory-list li::before {
@@ -462,10 +485,13 @@
       line-height: 1;
     }
 
+    /* 타임라인 패널: 높이 고정 및 스크롤 처리 */
     .timeline-panel {
       display: flex;
-      min-height: 0;
       flex-direction: column;
+      height: calc(100vh - 44px);
+      position: sticky;
+      top: 22px;
     }
 
     .timeline-actions {
@@ -479,14 +505,13 @@
     }
 
     .timeline-list {
-      display: flex;
-      min-height: 0;
       flex: 1;
+      display: flex;
       flex-direction: column;
       gap: 14px;
       margin: 0;
       padding: 20px 24px 24px;
-      overflow: auto;
+      overflow-y: auto;
       list-style: none;
     }
 
@@ -523,19 +548,10 @@
       content: "";
     }
 
-    /* 타임라인 카테고리별 귀여운 색상 */
-    .timeline-item[data-category="AGENT"]::before {
-      background: #7ca8d9;
-    }
-    .timeline-item[data-category="WORLD"]::before {
-      background: var(--success);
-    }
-    .timeline-item[data-category="RESOURCE"]::before {
-      background: var(--warning);
-    }
-    .timeline-item[data-category="RELATIONSHIP"]::before {
-      background: #d988b1;
-    }
+    .timeline-item[data-category="AGENT"]::before { background: #7ca8d9; }
+    .timeline-item[data-category="WORLD"]::before { background: var(--success); }
+    .timeline-item[data-category="RESOURCE"]::before { background: var(--warning); }
+    .timeline-item[data-category="RELATIONSHIP"]::before { background: #d988b1; }
 
     .timeline-top {
       display: flex;
@@ -606,13 +622,22 @@
       display: none;
     }
 
+    /* 반응형 레이아웃 조절 */
+    @media (max-width: 1150px) {
+      .agent-card {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+    }
+
     @media (max-width: 1050px) {
       .layout {
         grid-template-columns: 1fr;
       }
-
       .timeline-panel {
-        min-height: 520px;
+        height: 600px; /* 모바일에서 높이 분리 */
+        position: relative;
+        top: 0;
       }
     }
 
@@ -620,27 +645,24 @@
       .app {
         padding: 16px;
       }
-
       .left-column {
         grid-template-rows: auto auto auto;
       }
-
       .toolbar-top {
         align-items: flex-start;
         flex-direction: column;
       }
-
       .connection-group {
         justify-content: flex-start;
       }
-
       .environment-body {
         grid-template-columns: repeat(2, minmax(110px, 1fr));
       }
-
       .agents-body {
-        grid-template-columns: 1fr;
-        max-height: none;
+        padding-left: 24px; /* 모바일에서 꼬리 패딩 축소 */
+      }
+      .agent-card::before, .agent-card::after {
+        display: none; /* 모바일 폭에선 말풍선 꼬리 숨김 */
       }
     }
   </style>
@@ -806,8 +828,6 @@
     function setSimulationId(nextSimulationId) {
       simulationId = nextSimulationId || null;
 
-      // file:// 문서는 고유 origin으로 취급되어 history.replaceState가
-      // SecurityError를 발생시킬 수 있으므로 메모리 상태만 갱신합니다.
       if (window.location.protocol === 'file:') {
         return;
       }
@@ -822,8 +842,6 @@
     }
 
     async function createSimulation() {
-      // 더블 클릭이나 중복 이벤트 등록으로 생성 요청이 겹치지 않도록
-      // 같은 Promise를 공유합니다.
       if (createSimulationPromise) {
         return createSimulationPromise;
       }
@@ -1260,45 +1278,53 @@
         const relationships = Object.entries(agent.relationships || {});
         const memories = Array.isArray(agent.memories) ? agent.memories.slice(-3).reverse() : [];
 
+        // 에이전트 내부 레이아웃을 3열로 나누어 표현
         return `
           <article class="agent-card">
-            <header class="agent-card-header">
-              <div>
-                <h3 class="agent-name">${escapeHtml(agent.name || agent.agent_id)}</h3>
-                <div class="agent-id">${escapeHtml(agent.agent_id || '-')}</div>
-              </div>
-              <span class="emotion">${escapeHtml(agent.current_emotion || 'neutral')}</span>
-            </header>
+            <!-- 좌측: 프로필 및 목표 -->
+            <div class="agent-col">
+              <header class="agent-card-header">
+                <div>
+                  <h3 class="agent-name">${escapeHtml(agent.name || agent.agent_id)}</h3>
+                  <div class="agent-id">${escapeHtml(agent.agent_id || '-')}</div>
+                </div>
+                <span class="emotion">${escapeHtml(agent.current_emotion || 'neutral')}</span>
+              </header>
+              <dl class="agent-meta">
+                <dt>위치</dt><dd>${escapeHtml(locationName)}</dd>
+                <dt>목표</dt><dd>${escapeHtml(agent.goal || '-')}</dd>
+              </dl>
+            </div>
 
-            <dl class="agent-meta">
-              <dt>위치</dt><dd>${escapeHtml(locationName)}</dd>
-              <dt>목표</dt><dd>${escapeHtml(agent.goal || '-')}</dd>
-            </dl>
+            <!-- 중앙: 욕구 및 관계 -->
+            <div class="agent-col">
+              <section class="agent-section" style="margin-top:0;">
+                <h4 class="section-label">Needs</h4>
+                ${needs.length
+                  ? needs.map(([name, value]) => renderNeed(name, value)).join('')
+                  : '<span class="chip">상태 없음</span>'}
+              </section>
+              <section class="agent-section">
+                <h4 class="section-label">Relationships</h4>
+                <div class="chip-list">
+                  ${relationships.length
+                    ? relationships.map(([id, value]) => `<span class="chip">${escapeHtml(nameById[id] || id)} ${formatSignedNumber(value)}</span>`).join('')
+                    : '<span class="chip">관계 없음</span>'}
+                </div>
+              </section>
+            </div>
 
-            <section class="agent-section">
-              <h4 class="section-label">Needs</h4>
-              ${needs.length
-                ? needs.map(([name, value]) => renderNeed(name, value)).join('')
-                : '<span class="chip">상태 없음</span>'}
-            </section>
-
-            <section class="agent-section">
-              <h4 class="section-label">Relationships</h4>
-              <div class="chip-list">
-                ${relationships.length
-                  ? relationships.map(([id, value]) => `<span class="chip">${escapeHtml(nameById[id] || id)} ${formatSignedNumber(value)}</span>`).join('')
-                  : '<span class="chip">관계 없음</span>'}
-              </div>
-            </section>
-
-            <section class="agent-section">
-              <h4 class="section-label">Recent memories</h4>
-              <ul class="memory-list">
-                ${memories.length
-                  ? memories.map((memory) => `<li title="${escapeHtml(memory)}">${escapeHtml(memory)}</li>`).join('')
-                  : '<li>아직 기억이 없습니다.</li>'}
-              </ul>
-            </section>
+            <!-- 우측: 기억(이벤트) -->
+            <div class="agent-col">
+              <section class="agent-section" style="margin-top:0;">
+                <h4 class="section-label">Recent memories</h4>
+                <ul class="memory-list">
+                  ${memories.length
+                    ? memories.map((memory) => `<li title="${escapeHtml(memory)}">${escapeHtml(memory)}</li>`).join('')
+                    : '<li>아직 기억이 없습니다.</li>'}
+                </ul>
+              </section>
+            </div>
           </article>
         `;
       }).join('');
@@ -1390,8 +1416,6 @@
       elements.buttons.pause.disabled = !running;
       elements.buttons.resume.disabled = !paused;
 
-      // 수동 Tick은 세션이 존재하며 종료되지 않은 모든 상태에서 허용합니다.
-      // SimulationManager의 Lock이 자동 Tick과의 동시 실행을 직렬화합니다.
       elements.buttons.tick.disabled = !hasSession || stopped;
       elements.buttons.refresh.disabled = !hasSession;
       elements.buttons.stop.disabled = !hasSession || stopped;
@@ -1490,8 +1514,6 @@
       setRestStatus('REST 대기', '');
       setWsStatus('Timeline 연결 전', '');
 
-      // 쿼리스트링으로 명시된 세션은 조회만 합니다.
-      // 세션이 없으면 생성하지 않으며 시작 버튼을 눌렀을 때만 새 세션을 만듭니다.
       if (!simulationId) {
         return;
       }
