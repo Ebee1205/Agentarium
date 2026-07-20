@@ -9,7 +9,7 @@
 
     :root {
       color-scheme: light;
-      var(--bg): #fff5f5;
+      --bg: #fff5f5;
       --panel: #ffffff;
       --panel-muted: #fff0f2;
       --line: #ffd1d8;
@@ -25,9 +25,7 @@
       --radius: 24px;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -166,7 +164,6 @@
     .badge.error::before, .badge.stopped::before { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
     .controls { display: flex; flex-wrap: wrap; gap: 10px; }
 
-    /* 귀여운 HUD + 게임 맵 컨테이너 */
     .game-viewport {
       position: relative;
       width: 100%;
@@ -183,7 +180,6 @@
       height: 100%;
     }
 
-    /* 캔버스 위에 귀엽게 떠 있는 HUD 요소들 */
     .hud-overlay {
       position: absolute;
       z-index: 10;
@@ -267,7 +263,6 @@
       font-size: 15px;
     }
 
-    /* 에이전트 목록 (말풍선 테마 복구) */
     .agents-body {
       display: grid;
       grid-template-columns: 1fr;
@@ -337,7 +332,6 @@
     .memory-list li { position: relative; padding-left: 14px; margin-bottom: 6px; line-height: 1.5; font-weight: 600; word-break: keep-all; }
     .memory-list li::before { content: "•"; position: absolute; left: 0; color: var(--accent); font-size: 16px; line-height: 1; }
 
-    /* 타임라인 */
     .timeline-panel { display: flex; flex-direction: column; height: calc(100vh - 44px); position: sticky; top: 22px; }
     .timeline-actions { display: flex; gap: 10px; }
     .timeline-actions button { padding: 8px 12px; font-size: 13px; }
@@ -352,12 +346,13 @@
     .timeline-item[data-category="WORLD"]::before { background: var(--success); }
     .timeline-item[data-category="RESOURCE"]::before { background: var(--warning); }
     .timeline-item[data-category="RELATIONSHIP"]::before { background: #d988b1; }
+    .timeline-item[data-category="SYSTEM"]::before { background: var(--line-strong); }
 
     .timeline-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
     .timeline-category { color: var(--accent); font-size: 11px; font-weight: 800; letter-spacing: 0.05em; background: var(--accent-soft); padding: 4px 8px; border-radius: 8px; }
     .timeline-time { color: var(--text-muted); font-size: 11px; font-weight: 600; }
     .timeline-title { margin: 0 0 6px; font-size: 15px; font-weight: 800; }
-    .timeline-summary { margin: 0; color: #635356; font-size: 13px; line-height: 1.6; font-weight: 600; }
+    .timeline-summary { margin: 0; color: #635356; font-size: 13px; line-height: 1.6; font-weight: 600; white-space: pre-wrap; }
     .timeline-footer { margin-top: 10px; color: var(--text-muted); font-size: 11px; font-weight: 700; background: var(--panel-muted); padding: 6px 10px; border-radius: 8px; display: inline-block; }
 
     .toast { position: fixed; right: 24px; bottom: 24px; z-index: 100; max-width: min(420px, calc(100vw - 48px)); border: 2px solid var(--danger); border-radius: 16px; padding: 14px 18px; color: #fff; background: var(--danger); box-shadow: 0 8px 20px rgba(255, 118, 118, 0.3); font-size: 14px; font-weight: 700; }
@@ -372,7 +367,6 @@
   <main class="app">
     <div class="layout">
       <section class="left-column">
-        <!-- 상단 툴바 -->
         <section class="panel toolbar" aria-labelledby="toolbar-title">
           <div class="toolbar-top">
             <div class="brand">
@@ -395,7 +389,6 @@
           </div>
         </section>
 
-        <!-- 귀여운 테마의 게임 뷰포트 (맵 + HUD 오버레이) -->
         <section class="panel" aria-labelledby="map-title">
           <header class="panel-header" style="border-bottom: none; padding-bottom: 0;">
             <div>
@@ -405,16 +398,14 @@
           </header>
           
           <div class="game-viewport" style="margin-top: 16px;">
-            <!-- 상단 좌측 귀여운 뱃지 HUD -->
             <div class="hud-overlay hud-top-left">
               <div id="hud-tick" class="hud-tick-text">TICK -</div>
               <div class="hud-env-info">
-                <span id="hud-time-weather" class="hud-badge">☀️ 낮 ∙ 맑음</span>
+                <span id="hud-time-weather" class="hud-badge">☀️ 대기 중</span>
                 <span id="hud-tension" class="hud-badge">긴장도: -</span>
               </div>
             </div>
 
-            <!-- 하단 귀여운 자원 필(Pill) -->
             <div class="hud-overlay hud-bottom">
               <div class="hud-resource-label">보유 자원</div>
               <div id="resources-container" class="hud-resources">
@@ -427,7 +418,6 @@
           </div>
         </section>
 
-        <!-- Agent 정보 패널 (말풍선 디자인) -->
         <section class="panel" aria-labelledby="agents-title">
           <header class="panel-header">
             <div>
@@ -442,7 +432,6 @@
         </section>
       </section>
 
-      <!-- 우측 타임라인 패널 -->
       <aside class="panel timeline-panel" aria-labelledby="timeline-title">
         <header class="panel-header">
           <div>
@@ -450,6 +439,7 @@
             <p class="panel-subtitle">월드에서 발생한 주요 사건 기록</p>
           </div>
           <div class="timeline-actions">
+            <button id="reload-timeline-button" type="button">다시 불러오기</button>
             <button id="clear-timeline-button" type="button">비우기</button>
           </div>
         </header>
@@ -689,14 +679,25 @@
 
     function eventToTimeline(event) {
       if (!event) return null;
-      return { timeline_id: event.event_id, tick: event.tick, category: classifyEvent(event.type), source_event_type: event.type, title: event.type || '이벤트', summary: event.summary, actor_id: event.actor_id, target_id: event.target_id, created_at: event.created_at };
+      return { 
+        timeline_id: event.event_id, 
+        tick: event.tick, 
+        category: classifyEvent(event.category || event.type), 
+        source_event_type: event.type, 
+        title: event.title || event.type || '이벤트', 
+        summary: event.summary, 
+        actor_id: event.actor_id, 
+        target_id: event.target_id, 
+        created_at: event.created_at 
+      };
     }
 
-    function classifyEvent(type = '') {
-      if (type === 'RELATIONSHIP_CHANGED') return 'RELATIONSHIP';
-      if (type === 'RESOURCE_CHANGED') return 'RESOURCE';
-      if (type.startsWith('AGENT_')) return 'AGENT';
-      if (['WORLD_EVENT', 'NEED_CHANGED'].includes(type)) return 'WORLD';
+    function classifyEvent(catOrType = '') {
+      const upper = String(catOrType).toUpperCase();
+      if (upper === 'AGENT' || upper.startsWith('AGENT_')) return 'AGENT';
+      if (upper === 'WORLD' || upper === 'TICK_STARTED' || upper.includes('TICK')) return 'WORLD';
+      if (upper === 'RESOURCE' || upper.includes('RESOURCE')) return 'RESOURCE';
+      if (upper === 'RELATIONSHIP' || upper.includes('RELATIONSHIP')) return 'RELATIONSHIP';
       return 'SYSTEM';
     }
 
@@ -720,7 +721,7 @@
       elements.simulationStatus.className = 'badge';
       elements.hudTick.textContent = 'TICK -';
       elements.hudTension.textContent = '긴장도: -';
-      elements.hudTimeWeather.textContent = "시간대/날씨 정보 없음";
+      elements.hudTimeWeather.textContent = "☀️ 대기 중";
       elements.resources.innerHTML = '<div class="hud-resource-item">생성 대기 중</div>';
       elements.agents.innerHTML = '<div class="empty-state">시작 후 Agent 정보가 표시됩니다.</div>';
       elements.agentCount.textContent = '0 agents';
@@ -734,7 +735,7 @@
       const t = String(timeOfDay || '').toLowerCase();
       if (t.includes('dawn') || t.includes('새벽')) return '🌅';
       if (t.includes('morning') || t.includes('아침')) return '🌤️';
-      if (t.includes('noon') || t.includes('낮') || t.includes('점심')) return '☀️';
+      if (t.includes('noon') || t.includes('낮') || t.includes('day') || t.includes('점심')) return '☀️';
       if (t.includes('afternoon') || t.includes('오후')) return '🌇';
       if (t.includes('evening') || t.includes('저녁')) return '🌆';
       if (t.includes('midnight') || t.includes('자정')) return '🌌';
@@ -744,7 +745,7 @@
 
     function getWeatherIcon(weather) {
       const w = String(weather || '').toLowerCase();
-      if (w.includes('storm') || w.includes('뇌우') || w.includes('폭풍')) return '⛈️';
+      if (w.includes('storm') || w.includes('뇌우')) return '⛈️';
       if (w.includes('rain') || w.includes('비')) return '🌧️';
       if (w.includes('snow') || w.includes('눈')) return '❄️';
       if (w.includes('fog') || w.includes('안개')) return '🌫️';
@@ -760,16 +761,19 @@
       if (n.includes('연못') || n.includes('물')) return '💧';
       if (n.includes('보관') || n.includes('창고')) return '📦';
       if (n.includes('장벽') || n.includes('외곽')) return '🧱';
-      if (n.includes('바위') || n.includes('관측')) return '🪨';
+      if (n.includes('바위') || n.includes('관측')) return '⛰️';
       return '📍';
     }
 
-    // 맵 렌더링 - 뽀짝뽀짝 귀여운 테마 캔버스
     function renderWorldGameMap(world, agents) {
-      // 1. HUD 업데이트 (HTML 뱃지)
-      elements.hudTick.textContent = `TICK ${world.tick ?? '-'}`;
-      elements.hudTension.textContent = `긴장도: ${world.tension ?? '-'}`;
-      elements.hudTimeWeather.textContent = `${getTimeIcon(world.time_of_day)} ${world.time_of_day || '-'} ∙ ${getWeatherIcon(world.weather)} ${world.weather || '-'}`;
+      const currentTick = world.tick ?? '-';
+      const currentTension = world.tension ?? 0;
+      const currentTimeOfDay = world.time_of_day || 'DAY';
+      const currentWeather = world.weather || 'clear';
+
+      elements.hudTick.textContent = `TICK ${currentTick}`;
+      elements.hudTension.textContent = `긴장도: ${currentTension}`;
+      elements.hudTimeWeather.textContent = `${getTimeIcon(currentTimeOfDay)} ${currentTimeOfDay} ∙ ${getWeatherIcon(currentWeather)} ${currentWeather}`;
 
       const resources = world.resources || {};
       const resourceEntries = Object.entries(resources);
@@ -781,30 +785,26 @@
         elements.resources.innerHTML = '<div class="hud-resource-item">자원 없음</div>';
       }
 
-      // 2. 캔버스 그리기 (파스텔 & 귀여운 패턴)
       const canvas = elements.canvas;
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       const width = canvas.width;
       const height = canvas.height;
 
-      // 캔버스 배경 (크림색 바탕)
       ctx.fillStyle = '#fffcfc'; 
       ctx.fillRect(0, 0, width, height);
 
-      // 귀여운 도트 느낌 그리드
       ctx.strokeStyle = '#fff0f2'; 
       ctx.lineWidth = 2;
       for (let i = 0; i < width; i += 40) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, height); ctx.stroke(); }
       for (let i = 0; i < height; i += 40) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(width, i); ctx.stroke(); }
 
-      // 기본 장소 파스텔 컬러
       const BASE_LOCATIONS = {
-        'home': { x: 200, y: 160, name: '거주지', stroke: '#a8e6cf' }, // 민트
-        'pond': { x: 700, y: 160, name: '깊은 연못', stroke: '#a1c4fd' }, // 파스텔 블루
-        'observation_rock': { x: 450, y: 240, name: '높은 바위', stroke: '#dcdde1' }, // 라이트 그레이
-        'storage': { x: 250, y: 360, name: '식량 보관소', stroke: '#ffdfba' }, // 파스텔 오렌지
-        'boundary_wall': { x: 650, y: 360, name: '외곽 투명 장벽', stroke: '#f8cdda' } // 파스텔 핑크
+        'home': { x: 200, y: 160, name: '거주지', stroke: '#a8e6cf' },
+        'pond': { x: 700, y: 160, name: '깊은 연못', stroke: '#a1c4fd' },
+        'observation_rock': { x: 450, y: 240, name: '높은 바위', stroke: '#dcdde1' },
+        'storage': { x: 250, y: 360, name: '식량 보관소', stroke: '#ffdfba' },
+        'boundary_wall': { x: 650, y: 360, name: '외곽 투명 장벽', stroke: '#f8cdda' }
       };
 
       const locations = world.locations || {};
@@ -819,13 +819,12 @@
             const radius = 160; const angle = (index / Math.max(1, locKeys.length)) * Math.PI * 2;
             mapLocationCoords[key] = {
               x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius,
-              name: locations[key].name || key, stroke: '#ffd1d8' // 디폴트 파스텔 핑크
+              name: locations[key].name || key, stroke: '#ffd1d8'
             };
           }
         }
       });
 
-      // 장소 간 귀여운 연결선 (점선)
       ctx.save();
       ctx.strokeStyle = '#ffe4e8';
       ctx.lineWidth = 3;
@@ -843,39 +842,35 @@
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
-      // 둥글둥글한 장소 노드 렌더링
       locKeys.forEach((key) => {
         const pos = mapLocationCoords[key];
+        if (!pos) return;
         const name = pos.name || locations[key]?.name || key;
         const icon = getLocationIcon(name);
 
-        // 노드 박스: 하얀 배경 + 두꺼운 파스텔 테두리 + 그림자
         ctx.save();
         ctx.fillStyle = '#ffffff';
         ctx.shadowColor = 'rgba(255, 141, 161, 0.1)';
         ctx.shadowBlur = 10;
         ctx.shadowOffsetY = 4;
         ctx.beginPath();
-        ctx.roundRect(pos.x - 70, pos.y - 45, 140, 90, 20); // 아주 둥근 모서리
+        ctx.roundRect(pos.x - 70, pos.y - 45, 140, 90, 20);
         ctx.fill();
         
         ctx.shadowColor = 'transparent';
         ctx.strokeStyle = pos.stroke;
-        ctx.lineWidth = 4; // 귀여운 느낌의 두꺼운 라인
+        ctx.lineWidth = 4;
         ctx.stroke();
         ctx.restore();
 
-        // 아이콘
         ctx.font = '28px Arial';
         ctx.fillText(icon, pos.x, pos.y - 12);
         
-        // 텍스트 (초코 브라운 컬러)
         ctx.font = 'bold 14px "Nunito", sans-serif';
         ctx.fillStyle = '#5c4a4d';
         ctx.fillText(name, pos.x, pos.y + 24);
       });
 
-      // 에이전트 렌더링 (귀여운 동그라미 캐릭터)
       const agentsByLoc = {};
       agents.forEach(agent => {
         const locId = agent.location_id || '__unknown__';
@@ -885,17 +880,15 @@
 
       Object.keys(agentsByLoc).forEach(locId => {
         let basePos = mapLocationCoords[locId];
-        if (!basePos) basePos = { x: 80, y: height - 100 }; // 맵 미상일시 좌하단
+        if (!basePos) basePos = { x: 80, y: height - 100 };
         
         const agentsHere = agentsByLoc[locId];
         agentsHere.forEach((agent, i) => {
           const row = Math.floor(i / 3);
           const col = i % 3;
-          // 노드 위에 띄워서 배치
           const ax = basePos.x - 24 + col * 24;
           const ay = basePos.y - 65 - row * 34; 
 
-          // 1. 캐릭터 원형 칩 (핑크색 젤리 느낌)
           ctx.fillStyle = '#ff8da1';
           ctx.beginPath();
           ctx.arc(ax, ay, 12, 0, Math.PI * 2);
@@ -904,29 +897,25 @@
           ctx.lineWidth = 2.5;
           ctx.stroke();
 
-          // 2. 이니셜
           ctx.font = 'bold 12px "Nunito", sans-serif';
           ctx.fillStyle = '#ffffff';
           const initial = String(agent.name || agent.agent_id || '?').trim().slice(0, 1);
           ctx.fillText(initial, ax, ay + 1);
 
-          // 3. 미니 상태바 (귀여운 알약 모양)
           const needs = Object.values(agent.needs || {}).map(Number).filter(Number.isFinite);
           const minNeed = needs.length ? Math.min(...needs) : 100;
           const barWidth = 22;
           const fillWidth = Math.max(0, barWidth * (minNeed / 100));
           
-          let barColor = '#5cdb95'; // 그린
-          if (minNeed < 30) barColor = '#ff7676'; // 레드
-          else if (minNeed < 60) barColor = '#ffbd59'; // 옐로
+          let barColor = '#5cdb95';
+          if (minNeed < 30) barColor = '#ff7676';
+          else if (minNeed < 60) barColor = '#ffbd59';
 
-          // 배경 바
           ctx.fillStyle = '#ffe4e8';
           ctx.beginPath();
           ctx.roundRect(ax - barWidth/2, ay + 15, barWidth, 5, 2.5);
           ctx.fill();
           
-          // 채워진 바
           if(fillWidth > 0) {
             ctx.fillStyle = barColor;
             ctx.beginPath();
@@ -1007,16 +996,20 @@
 
     function replaceTimeline(items) {
       timelineItems.length = 0; timelineIds.clear();
-      [...items].reverse().forEach((item) => addTimelineItem(item, { prepend: false, render: false }));
+      if (Array.isArray(items)) {
+        [...items].reverse().forEach((item) => addTimelineItem(item, { prepend: false, render: false }));
+      }
       renderTimeline();
     }
 
     function addTimelineItem(item, { prepend = true, render = true } = {}) {
-      const id = item.timeline_id || item.event_id || `${item.created_at}-${item.tick}-${item.summary}`;
+      const normalized = eventToTimeline(item) || item;
+      const id = normalized.timeline_id || normalized.event_id || `${normalized.created_at}-${normalized.tick}-${normalized.summary}`;
       if (timelineIds.has(id)) return;
       timelineIds.add(id);
-      const normalized = { ...item, timeline_id: id };
-      if (prepend) { timelineItems.unshift(normalized); } else { timelineItems.push(normalized); }
+      
+      const wrapped = { ...normalized, timeline_id: id };
+      if (prepend) { timelineItems.unshift(wrapped); } else { timelineItems.push(wrapped); }
       while (timelineItems.length > MAX_TIMELINE_ITEMS) { const removed = timelineItems.pop(); timelineIds.delete(removed.timeline_id); }
       if (render) renderTimeline();
     }
@@ -1024,7 +1017,7 @@
     function renderTimeline() {
       if (!timelineItems.length) { elements.timeline.innerHTML = '<li class="timeline-empty">아직 발생한 이벤트가 없습니다.</li>'; return; }
       elements.timeline.innerHTML = timelineItems.map((item) => {
-        const category = item.category || classifyEvent(item.source_event_type || item.type || '');
+        const category = classifyEvent(item.category || item.source_event_type || '');
         return `
           <li class="timeline-item" data-category="${escapeHtml(category)}">
             <div class="timeline-top">
@@ -1108,6 +1101,7 @@
     }
 
     document.querySelectorAll('[data-action]').forEach((button) => { button.addEventListener('click', () => controlSimulation(button.dataset.action)); });
+    document.getElementById('reload-timeline-button').addEventListener('click', () => loadTimeline());
     document.getElementById('clear-timeline-button').addEventListener('click', () => replaceTimeline([]));
     document.getElementById('download-timeline-button').addEventListener('click', () => {
       if (!timelineItems.length) { showError(new Error('다운로드할 데이터가 없습니다.')); return; }

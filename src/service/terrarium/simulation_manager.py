@@ -286,7 +286,36 @@ class SimulationManager:
 
                 loop = asyncio.get_running_loop()
                 started_at = loop.time()
-                await self.run_tick(simulation_id)
+                try:
+                    await self.run_tick(simulation_id)
+                except Exception as exc:
+                    self._log(
+                        "error",
+                        f"[ATM] auto tick step failed: simulation_id={simulation_id}, "
+                        f"error={type(exc).__name__}: {exc!r}",
+                    )
+                    state = self.simulations.get(simulation_id)
+                    if state is not None and state.status == SimulationStatus.RUNNING:
+                        try:
+                            await self.event_manager.emit(
+                                simulation_id=simulation_id,
+                                tick=state.world.tick,
+                                event_type=WorldEventType.WORLD_EVENT,
+                                summary=(
+                                    "자동 행동 생성에 실패했지만 시뮬레이션은 계속된다."
+                                ),
+                                payload={
+                                    "error_type": type(exc).__name__,
+                                    "error": str(exc),
+                                },
+                            )
+                        except Exception as emit_exc:
+                            self._log(
+                                "warning",
+                                f"[ATM] failed to emit tick failure event: "
+                                f"simulation_id={simulation_id}, "
+                                f"error={type(emit_exc).__name__}: {emit_exc!r}",
+                            )
 
                 # Tick 처리 시간을 제외한 나머지만 대기해 설정 주기를 유지합니다.
                 elapsed = loop.time() - started_at

@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 
 
 class AgentActionType(str, Enum):
@@ -28,6 +28,7 @@ class SpeechTone(str, Enum):
     PROVOCATIVE = "provocative"
     AGGRESSIVE = "aggressive"
     ARROGANT = "arrogant"
+
 
 class SpeechLevel(str, Enum):
     CASUAL = "casual"
@@ -73,7 +74,13 @@ class SpeechRule(BaseModel):
     question_tendency: int = Field(default=50, ge=0, le=100)
     address_style: str = "상황에 맞게 상대를 부른다."
     verbal_habits: list[str] = Field(default_factory=list)
-    forbidden_behaviors: list[str] = Field(default_factory=list)
+    forbidden_phrases: list[str] = Field(
+        default_factory=list,
+        validation_alias=AliasChoices(
+            "forbidden_phrases",
+            "forbidden_behaviors",
+        ),
+    )
 
 
 class ActRule(BaseModel):
