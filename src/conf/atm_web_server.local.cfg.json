@@ -1,68 +1,47 @@
 {
-    "environment": "local",
-    "project_name": "atm_web_server",
-    "api_v1_str": "/api/v1",
-    "host": "localhost",
-    "port": 3000,
-    "secret_key": "changethis-secret-key",
-    "access_token_expire_minutes": 1440,
-
-    "http_config": {
-      "allow_origins": ["http://localhost:3000"],
-      "allow_methods": ["*"],
-      "allow_headers": ["*"],
-      "allow_credentials": true
-    },
-
-    "rmq": {
-      "host": "localhost",
-      "port": 5672,
-      "user": "guest",
-      "password": "guest",
-      "queues": [
-        { "name": "atm-queue", "type": "pub" }
-      ]
-    },
-    
-    "db": {
-      "host": "localhost",
-      "port": 3306,
-      "user": "guest",
-      "password": "abcd1234",
-      "database": "atm"
-    },
-    
-    "redis": {
-      "host": "localhost",
-      "port": 6379,
-      "db": 0,
-      "password": null
-    },
-
-    "redis_consumer": {
-      "stream_key": "session:chat:*",
-      "group_name": "web-group",
-      "consumer_name": "web-consumer-1"
-    },
-
-    "r2": {
-      "account_id": "atm-images",
-      "bucket_name": "atm-images",
-      "region": "auto",
-      "endpoint_url": "https://2a9b33fa7ea08ae491598e555233bddb.r2.cloudflarestorage.com",
-      "public_base_url": "https://pub-a309ad8a0a6e4a629ad982d710e35276.r2.dev",
-      "image_prefix": "images",
-      "upload_url_expire_seconds": 900
-    },
-
-    "logger": {
-        "level": "debug",
-        "path": "./logs/atm_web_server.log-%DATE%",
-        "suffix": "%Y-%m-%d",
-        "max_bytes": 10485760,
-        "max_files": "3d",
-        "rotation": "daily",
-        "use_console": true
-    }  
+  "environment": "local",
+  "project_name": "atm",
+  "api_v1_str": "/api/v1",
+  "host": "0.0.0.0",
+  "port": 9571,
+  "secret_key": "atm-local-development-key",
+  "access_token_expire_minutes": 60,
+  "logger": {
+    "level": "DEBUG",
+    "path": "logs/atm.log",
+    "suffix": "%Y%m%d",
+    "max_bytes": 10485760,
+    "max_files": "7",
+    "rotation": "midnight",
+    "use_console": true
+  },
+  "http_config": {
+    "allow_origins": ["*"],
+    "allow_methods": ["*"],
+    "allow_headers": ["*"],
+    "allow_credentials": false
+  },
+  "enable_monitoring": false,
+  "monitoring_interval": 10,
+  "llm": {
+    "provider": "mock",
+    "model": "atm-mock-agent",
+    "base_url": null,
+    "timeout_seconds": 30,
+    "api_key_env": null
+  },
+  "rag": {
+    "enabled": false,
+    "chunks_path": "reference/atm_chunks.json",
+    "index_path": "faiss_index_chunks",
+    "embedding_model": "nomic-embed-text",
+    "embedding_base_url": "http://127.0.0.1:11434"
+  },
+  "terrarium": {
+    "enabled": true,
+    "tick_seconds": 3.0,
+    "max_events": 200,
+    "auto_start": false,
+    "default_simulation_id": "atm-demo"
+  }
 }
-  

@@ -1,35 +1,26 @@
 {
-  "atm_mw_server": {
-    "rmq": {
-      "send.frame": {
-        "queue": "atm-queue",
-        "handler": "src.service.system.system_consumer.handle_system_message",
-        "description": "포즈 데이터 수집 및 처리"
-      }
-    }
-  },
-  "atm_web_server": {
+  "atm": {
     "ws": {
-      "chat.message": {
-        "websocket": "/v1/session/chat",
-        "handler": "src.service.ai.chat_ws.handle_llm_invocation",
-        "description": "사용자 채팅 메시지 처리 (LLM 경유)"
+      "SIMULATION_START": {
+        "description": "테라리움 시뮬레이션 시작"
       },
-      "llm.invoke": {
-        "websocket": "/v1/session/chat",
-        "handler": "src.service.ai.chat_ws.handle_llm_invocation",
-        "description": "LLM 호출 요청 처리"
+      "SIMULATION_PAUSE": {
+        "description": "테라리움 시뮬레이션 일시 정지"
       },
-      "typing": {
-        "websocket": "/v1/session/chat",
-        "handler": "src.service.messaging.ws_processor.process_typing_indicator",
-        "description": "사용자 입력 중 표시"
-      }
-    },
-    "redis": {
-      "session:chat:*": {
-        "stream_key": "session:chat:*",
-        "description": "세션별 채팅 메시지 저장소"
+      "SIMULATION_RESUME": {
+        "description": "테라리움 시뮬레이션 재개"
+      },
+      "SIMULATION_STOP": {
+        "description": "테라리움 시뮬레이션 종료"
+      },
+      "RUN_TICK": {
+        "description": "개발용 단일 tick 실행"
+      },
+      "GET_STATE": {
+        "description": "현재 테라리움 상태 조회"
+      },
+      "OBSERVER_INTERVENTION": {
+        "description": "외부 관찰자 이벤트 투입"
       }
     }
   }

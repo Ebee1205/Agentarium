@@ -93,6 +93,14 @@ class LLMConfig(BaseModel):
     api_key_env: Optional[str] = None
 
 
+class TerrariumConfig(BaseModel):
+    enabled: bool = True
+    tick_seconds: float = 3.0
+    max_events: int = 200
+    auto_start: bool = False
+    default_simulation_id: str = "atm-demo"
+
+
 class RAGConfig(BaseModel):
     enabled: bool = True
     chunks_path: str = "reference/atm_chunks.json"
@@ -129,6 +137,7 @@ class AppConfig(BaseModel):
     # 서비스 관련
     llm: Optional[LLMConfig] = None
     rag: RAGConfig = Field(default_factory=RAGConfig)
+    terrarium: TerrariumConfig = Field(default_factory=TerrariumConfig)
 
 
 class AppContext:
@@ -148,6 +157,10 @@ class AppContext:
         self.system_monitor = None
         # self.rag_manager: Optional[RAGManager] = None
         self.llm_manager: Optional[LLMManager] = None
+        self.event_manager = None
+        self.world_manager = None
+        self.agent_manager = None
+        self.simulation_manager = None
 
     def load_config(self, path: str) -> AppConfig:
         """JSON 파일을 로드하고 AppConfig 모델로 파싱"""
@@ -286,3 +299,29 @@ class AppContext:
             raise
 
         self.log.debug("- end init LLMs")
+    def _init_terrarium_managers(self):
+        """ATM 테라리움 도메인 매니저를 AppContext에 등록합니다."""
+        if not self.cfg.terrarium.enabled:
+            self.log.info("[ATM] terrarium is disabled")
+            return
+
+        from src.service.terrarium.agent_manager import AgentManager
+        from src.service.terrarium.event_manager import EventManager
+        from src.service.terrarium.simulation_manager import SimulationManager
+        from src.service.terrarium.world_manager import WorldManager
+
+        self.log.debug("+ start init terrarium managers")
+        self.event_manager = EventManager(self)
+        self.world_manager = WorldManager(self)
+        self.agent_manager = AgentManager(self)
+        self.simulation_manager = SimulationManager(
+            self,
+            agent_manager=self.agent_manager,
+            world_manager=self.world_manager,
+            event_manager=self.event_manager,
+        )
+        self.log.info(
+            f"[ATM] terrarium managers ready "
+            f"(tick_seconds={self.cfg.terrarium.tick_seconds})"
+        )
+        self.log.debug("- end init terrarium managers")
