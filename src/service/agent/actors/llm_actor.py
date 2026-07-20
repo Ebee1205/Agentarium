@@ -182,12 +182,7 @@ class LLMAgentActor(BaseAgentActor):
     ) -> None:
         if not action.narration.strip():
             raise ValueError("narration이 비어 있습니다.")
-
-        if action.action in actor.act_rule.forbidden_actions:
-            raise ValueError(
-                f"캐릭터 act_rule에서 금지한 행동입니다: {action.action.value}"
-            )
-
+    
         if action.action == AgentActionType.MOVE:
             target = action.target_location_id
             if target not in state.world.locations:

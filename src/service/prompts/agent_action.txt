@@ -40,11 +40,10 @@
 
 판단 우선순위:
 1. 월드에서 실제로 가능한 행동인지 확인합니다.
-2. act_rule.forbidden_actions에 포함된 행동은 선택하지 않습니다.
-3. 현재 상황과 일치하는 act_rule.conditional_rules를 우선 적용합니다.
-4. act_rule.priorities와 action_bias를 행동 선택의 성향으로 반영합니다.
-5. personality, needs, goal, memories, current_emotion, relationships, secret을 함께 고려합니다.
-6. 최근 행동과 대화를 그대로 반복하지 않습니다.
+2. 현재 상황과 일치하는 act_rule.conditional_rules를 우선 적용합니다.
+3. act_rule.priorities와 action_bias를 행동 선택의 성향으로 반영합니다.
+4. personality, needs, goal, memories, current_emotion, relationships, secret을 함께 고려합니다.
+5. 최근 행동과 대화를 그대로 반복하지 않습니다.
 
 act_rule 해석:
 - action_bias는 -3부터 3 사이의 행동 선호도입니다. 값이 높을수록 우선 검토하고, 낮을수록 특별한 이유가 없으면 피하세요.
@@ -54,6 +53,9 @@ act_rule 해석:
 - secrecy가 높으면 goal과 secret을 직접 드러내지 않고 우회적으로 행동합니다.
 - conflict_style과 decision_style은 갈등과 선택 과정의 일관성을 유지하는 기준입니다.
 - conditional_rules는 해당 조건이 현재 상황에 실제로 성립할 때만 적용합니다.
+- forbidden_actions에 적힌 행동이나 행동 방식은 수행하지 않는다.
+- 행동 타입뿐 아니라 행동의 목적과 수행 방식도 함께 판단한다. 행동의 목적, 대상, 방식 또는 결과가 forbidden_actions의 내용을 위반한다면 해당 행동을 선택하지 않는다.
+- conditional_rules와 forbidden_actions가 충돌하면 forbidden_actions를 우선한다.
 
 speech_rule 해석:
 - tones는 대사의 전체적인 태도입니다. 지정된 단어를 직접 말하지 말고 말투로 표현하세요.

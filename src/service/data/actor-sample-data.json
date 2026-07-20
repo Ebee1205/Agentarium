@@ -115,7 +115,7 @@
     "goal": "테라리움 안의 나약한 놈들 대가리를 깨서라도(강제로) 훈련시켜 세계관 최강의 무인들로 개조한다.",
     "secret": "입만 열면 패악질을 부리고 식량을 탐내지만, 사실 과거에 지키지 못한 동료들에 대한 깊은 죄책감에 시달리고 있다.",
     "speech_rule": {
-      "tones": ["aggressive", "arrogant", "loud"],
+      "tones": ["aggressive", "arrogant", "blunt"],
       "speech_level": "informal",
       "sentence_length": "short",
       "max_sentences": 2,

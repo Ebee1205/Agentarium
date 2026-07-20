@@ -26,14 +26,15 @@ class SpeechTone(str, Enum):
     SARCASTIC = "sarcastic"
     SUSPICIOUS = "suspicious"
     PROVOCATIVE = "provocative"
-
+    AGGRESSIVE = "aggressive"
+    ARROGANT = "arrogant"
 
 class SpeechLevel(str, Enum):
     CASUAL = "casual"
     NEUTRAL = "neutral"
     POLITE = "polite"
     FORMAL = "formal"
-
+    INFORMAL = "informal"
 
 class SentenceLength(str, Enum):
     SHORT = "short"
@@ -47,6 +48,7 @@ class ConflictStyle(str, Enum):
     CONFRONT = "confront"
     MANIPULATE = "manipulate"
     CONTROL = "control"
+    ATTACK = "attack"
 
 
 class DecisionStyle(str, Enum):
@@ -71,7 +73,7 @@ class SpeechRule(BaseModel):
     question_tendency: int = Field(default=50, ge=0, le=100)
     address_style: str = "상황에 맞게 상대를 부른다."
     verbal_habits: list[str] = Field(default_factory=list)
-    forbidden_phrases: list[str] = Field(default_factory=list)
+    forbidden_behaviors: list[str] = Field(default_factory=list)
 
 
 class ActRule(BaseModel):
@@ -94,7 +96,7 @@ class ActRule(BaseModel):
     )
     priorities: list[str] = Field(default_factory=list)
     conditional_rules: list[str] = Field(default_factory=list)
-    forbidden_actions: list[AgentActionType] = Field(default_factory=list)
+    forbidden_actions: list[str] = Field(default_factory=list)
 
 
 class AgentState(BaseModel):
