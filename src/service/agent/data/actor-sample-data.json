@@ -1,7 +1,7 @@
 [
 	{
-		"agent_id": "mori",
-		"name": "모리",
+		"agent_id": "ir",
+		"name": "이령",
 		"personality": {
 			"curiosity": 90,
 			"sociability": 65,
@@ -11,8 +11,8 @@
 		"secret": "연못 아래에서 희미한 빛을 보았다."
 	},
 	{
-		"agent_id": "dodo",
-		"name": "도도",
+		"agent_id": "kyj",
+		"name": "김영지",
 		"personality": {
 			"curiosity": 35,
 			"sociability": 70,
@@ -22,8 +22,8 @@
 		"secret": "식량 일부를 비상용으로 숨겨 두었다."
 	},
 	{
-		"agent_id": "ruru",
-		"name": "루루",
+		"agent_id": "dprud",
+		"name": "고예경",
 		"personality": {
 			"curiosity": 75,
 			"sociability": 45,

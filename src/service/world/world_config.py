@@ -34,9 +34,9 @@ def load_world_rules(ctx: Any) -> WorldRules:
 
 def default_locations() -> dict[str, LocationState]:
     return {
-        "nest": LocationState(
-            location_id="nest",
-            name="둥지",
+        "home": LocationState(
+            location_id="home",
+            name="집",
             description="개체들이 쉬거나 대화하는 안전한 장소",
         ),
         "pond": LocationState(
