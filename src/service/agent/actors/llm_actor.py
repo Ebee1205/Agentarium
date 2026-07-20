@@ -44,7 +44,9 @@ class LLMAgentActor(BaseAgentActor):
                 ],
             },
             response_schema=AGENT_ACTION_JSON_SCHEMA,
-            temperature=0.8,
+            temperature=0.3,
+            max_output_tokens=512,
+            keep_alive="10m",
         )
         if not isinstance(payload, dict):
             raise ValueError("Agent action must be a JSON object")
