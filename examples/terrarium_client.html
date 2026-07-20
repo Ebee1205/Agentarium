@@ -757,6 +757,7 @@
     let reconnectTimer = null;
     let toastTimer = null;
     let intentionalWsClose = false;
+    let createSimulationPromise = null;
 
     function apiPath(path = '') {
       if (!simulationId) {
@@ -771,20 +772,31 @@
           'Content-Type': 'application/json',
           ...(options.headers || {}),
         },
+        cache: 'no-store',
         ...options,
       });
 
+      const rawBody = await response.text();
       let payload = null;
-      try {
-        payload = await response.json();
-      } catch (_) {
-        payload = null;
+      if (rawBody) {
+        try {
+          payload = JSON.parse(rawBody);
+        } catch (_) {
+          payload = null;
+        }
       }
 
       if (!response.ok) {
-        const detail = payload?.detail || payload?.message || `${response.status} ${response.statusText}`;
-        const error = new Error(typeof detail === 'string' ? detail : JSON.stringify(detail));
+        const detail = payload?.detail
+          || payload?.message
+          || rawBody
+          || `${response.status} ${response.statusText}`;
+        const error = new Error(
+          typeof detail === 'string' ? detail : JSON.stringify(detail),
+        );
         error.status = response.status;
+        error.payload = payload;
+        error.responseBody = rawBody;
         throw error;
       }
 
@@ -793,6 +805,12 @@
 
     function setSimulationId(nextSimulationId) {
       simulationId = nextSimulationId || null;
+
+      // file:// 문서는 고유 origin으로 취급되어 history.replaceState가
+      // SecurityError를 발생시킬 수 있으므로 메모리 상태만 갱신합니다.
+      if (window.location.protocol === 'file:') {
+        return;
+      }
 
       const url = new URL(window.location.href);
       if (simulationId) {
@@ -804,31 +822,46 @@
     }
 
     async function createSimulation() {
-      const payload = await requestJson(`${API_BASE}/api/v1/terrarium`, {
-        method: 'POST',
-        body: JSON.stringify({
-          name: 'ATM Terrarium',
-        }),
-      });
-
-      const state = payload?.data;
-      if (!state?.simulation_id) {
-        throw new Error('새 세션 ID를 응답받지 못했습니다.');
+      // 더블 클릭이나 중복 이벤트 등록으로 생성 요청이 겹치지 않도록
+      // 같은 Promise를 공유합니다.
+      if (createSimulationPromise) {
+        return createSimulationPromise;
       }
 
-      await disconnectTimeline();
-      stopStatePolling();
+      createSimulationPromise = (async () => {
+        const payload = await requestJson(`${API_BASE}/api/v1/terrarium`, {
+          method: 'POST',
+          body: JSON.stringify({
+            simulation_id: null,
+            name: 'ATM Terrarium',
+          }),
+        });
 
-      setSimulationId(state.simulation_id);
-      currentState = state;
-      replaceTimeline([]);
-      renderState(state);
+        const state = payload?.data;
+        if (!state?.simulation_id) {
+          throw new Error('새 세션 ID를 응답받지 못했습니다.');
+        }
 
-      await connectTimeline();
-      await loadTimeline({ silent: true });
-      startStatePolling();
+        await disconnectTimeline();
+        stopStatePolling();
 
-      return state;
+        setSimulationId(state.simulation_id);
+        currentState = state;
+        replaceTimeline([]);
+        renderState(state);
+
+        await connectTimeline();
+        await loadTimeline({ silent: true });
+        startStatePolling();
+
+        return state;
+      })();
+
+      try {
+        return await createSimulationPromise;
+      } finally {
+        createSimulationPromise = null;
+      }
     }
 
     async function startSimulation() {
