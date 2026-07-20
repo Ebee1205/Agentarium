@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: sans-serif; max-width: 900px; margin: 40px auto; padding: 0 16px; }
+    button { margin-right: 8px; margin-bottom: 12px; }
+    #status { margin-bottom: 16px; }
+    #timeline { list-style: none; padding: 0; }
+    #timeline li { border-left: 3px solid #999; padding: 8px 12px; margin: 8px 0; background: #f5f5f5; }
+    pre { max-height: 280px; overflow: auto; background: #111; color: #eee; padding: 12px; }
+  </style>
+</head>
+<body>
+  <h1>ATM Terrarium</h1>
+  <div id="status">연결 전</div>
+  <button onclick="send('SIMULATION_START')">시작</button>
+  <button onclick="send('SIMULATION_PAUSE')">일시 정지</button>
+  <button onclick="send('SIMULATION_RESUME')">재개</button>
+  <button onclick="send('RUN_TICK')">1 Tick</button>
+  <button onclick="send('GET_STATE')">상태 조회</button>
+  <button onclick="send('SIMULATION_STOP')">종료</button>
+  <h2>타임라인</h2>
+  <ul id="timeline"></ul>
+  <h2>최근 메시지</h2>
+  <pre id="raw"></pre>
+  <script>
+    const simulationId = 'atm-demo';
+    const ws = new WebSocket(`ws://localhost:9571/ws/terrarium/${simulationId}`);
+    const status = document.getElementById('status');
+    const timeline = document.getElementById('timeline');
+    const raw = document.getElementById('raw');
+
+    ws.onopen = () => status.textContent = `연결됨: ${simulationId}`;
+    ws.onclose = () => status.textContent = '연결 종료';
+    ws.onerror = () => status.textContent = '연결 오류';
+    ws.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      raw.textContent = JSON.stringify(message, null, 2);
+      if (message.hd?.type === 'TIMELINE_EVENT') {
+        const item = document.createElement('li');
+        const data = message.bd.data.event;
+        item.textContent = `[${data.tick}] ${data.summary}`;
+        timeline.prepend(item);
+      }
+    };
+
+    function send(type, data = {}) {
+      ws.send(JSON.stringify({
+        hd: {
+          type,
+          timestamp: Date.now(),
+          sid: simulationId,
+          mid: `web_${crypto.randomUUID()}`,
+          sender: 'USER_A'
+        },
+        bd: { data }
+      }));
+    }
+  </script>
+</body>
+</html>

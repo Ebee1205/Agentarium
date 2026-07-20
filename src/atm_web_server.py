@@ -19,7 +19,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from src.app_context import AppContext
 from src.common.responses import build_error_response
-from src.service.chatbot.chat_sample import router as chatbot_router
+
 from src.service.terrarium.terrarium_router import router as terrarium_router
 
 
