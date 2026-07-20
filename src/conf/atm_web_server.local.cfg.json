@@ -30,10 +30,10 @@
   "enable_monitoring": false,
   "monitoring_interval": 10,
   "llm": {
-    "provider": "mock",
-    "model": "atm-mock-agent",
-    "base_url": null,
-    "timeout_seconds": 30,
+    "provider": "ollama",
+    "model": "exaone3.5:latest",
+    "base_url": "http://127.0.0.1:11434",
+    "timeout_seconds": 240,
     "api_key_env": null
   },
   "rag": {
@@ -45,11 +45,12 @@
   },
   "terrarium": {
     "enabled": true,
-    "tick_seconds": 3.0,
+    "tick_seconds": 5.0,
     "max_events": 200,
     "auto_start": false,
     "default_simulation_id": "atm-demo",
-    "use_llm": false,
+    "use_llm": true,
+    "allow_mock_fallback": false,
     "prompt_path": "src/service/prompts/agent_action.txt",
     "max_memories": 10,
     "ticks_per_day": 24,

@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 
 
 class AgentActionType(str, Enum):
@@ -19,7 +19,6 @@ class AgentState(BaseModel):
     name: str = Field(min_length=1)
 
     personality: dict[str, int] = Field(default_factory=dict)
-
     needs: dict[str, int] = Field(
         default_factory=lambda: {
             "hunger": 20,
@@ -28,8 +27,11 @@ class AgentState(BaseModel):
         }
     )
 
-    # 기존: "nest"
-    location_id: str = "home"
+    # 새 데이터의 location_id와 기존 데이터의 initial_location을 모두 지원합니다.
+    location_id: str = Field(
+        default="home",
+        validation_alias=AliasChoices("location_id", "initial_location"),
+    )
 
     current_emotion: str = "calm"
     relationships: dict[str, int] = Field(default_factory=dict)
@@ -41,10 +43,12 @@ class AgentState(BaseModel):
 
 class AgentAction(BaseModel):
     action: AgentActionType
+
     target_agent_id: str | None = None
     target_location_id: str | None = None
     resource: str | None = None
     content: str | None = None
+
     emotion: str = "neutral"
     reason: str = ""
 
@@ -63,15 +67,14 @@ AGENT_ACTION_JSON_SCHEMA: dict[str, Any] = {
         "emotion": {"type": "string"},
         "reason": {"type": "string"},
     },
-    # 모든 키를 누락 없이 응답하도록 required에 전부 포함
     "required": [
-        "action", 
-        "target_agent_id", 
-        "target_location_id", 
-        "resource", 
-        "content", 
-        "emotion", 
-        "reason"
+        "action",
+        "target_agent_id",
+        "target_location_id",
+        "resource",
+        "content",
+        "emotion",
+        "reason",
     ],
     "additionalProperties": False,
 }
