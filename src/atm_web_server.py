@@ -51,7 +51,7 @@ class AppFactory:
         ctx = AppContext()
         app.state.ctx = ctx
 
-        ctx.load_config("src/conf/atm_web_server.local.cfg.json")
+        ctx.load_config("src/conf/atm_web_server.ollama.cfg.json")
         ctx.load_json_map("event_map", "src/conf/atm-event-map.cfg.json")
 
         AppFactory._setup_cors(app, ctx)

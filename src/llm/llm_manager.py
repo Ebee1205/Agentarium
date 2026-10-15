@@ -10,7 +10,7 @@ from src.llm.providers.llm_provider import (
     BaseLLMProvider,
     LLMProviderError,
 )
-# from src.llm.providers.ollama_provider import OllamaProvider
+from src.llm.providers.ollama_provider import OllamaProvider
 from src.llm.providers.mock_provider import MockLLMProvider
 
 # 실제 외부 Provider를 활성화할 때 import의 주석을 해제합니다.
@@ -87,21 +87,21 @@ class LLMManager:
                 timeout_seconds=timeout_seconds,
             )
 
-        # # 기본 Provider: Ollama
-        # if provider_name in {"", "ollama"}:
-        #     return OllamaProvider(
-        #         ctx=self.ctx,
-        #         model=model,
-        #         base_url=base_url
-        #         or os.getenv(
-        #             "OLLAMA_BASE_URL",
-        #             "http://127.0.0.1:11434",
-        #         ),
-        #         timeout_seconds=timeout_seconds,
-        #         api_key=self._get_env_value(
-        #             api_key_env or "OLLAMA_API_KEY"
-        #         ),
-        #     )
+        # 기본 Provider: Ollama
+        if provider_name in {"", "ollama"}:
+            return OllamaProvider(
+                ctx=self.ctx,
+                model=model,
+                base_url=base_url
+                or os.getenv(
+                    "OLLAMA_BASE_URL",
+                    "http://127.0.0.1:11434",
+                ),
+                timeout_seconds=timeout_seconds,
+                api_key=self._get_env_value(
+                    api_key_env or "OLLAMA_API_KEY"
+                ),
+            )
 
         # Gemini 활성화 예시
         # if provider_name == "gemini":

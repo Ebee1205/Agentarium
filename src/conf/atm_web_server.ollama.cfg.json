@@ -25,9 +25,9 @@
   "monitoring_interval": 10,
   "llm": {
     "provider": "ollama",
-    "model": "qwen3:8b",
+    "model": "kwangsuklee/Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-GGUF:latest",
     "base_url": "http://127.0.0.1:11434",
-    "timeout_seconds": 120,
+    "timeout_seconds": 6000,
     "api_key_env": null
   },
   "rag": {

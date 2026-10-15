@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query, Request, WebSocket
+from pydantic import ValidationError
 
 from src.common.responses import ResponseStatus
 from src.common.ws_responses import (
@@ -27,12 +28,27 @@ def _manager_from(target: Any):
 
 
 @router.post("/api/v1/terrarium")
-async def create_terrarium(request: Request, body: CreateSimulationRequest):
+async def create_terrarium(
+    request: Request,
+    body: CreateSimulationRequest,
+):
     _, manager = _manager_from(request)
+
     try:
         state = await manager.create(body)
+
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=exc.errors(),
+        ) from exc
+
     except ValueError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=409,
+            detail=str(exc),
+        ) from exc
+
     return {"data": model_to_dict(state)}
 
 
