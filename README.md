@@ -12,6 +12,20 @@
 
 </div>
 
+<a href="https://www.youtube.com/watch?v=cu-7mf62gkw">
+  <img
+    src="https://img.youtube.com/vi/cu-7mf62gkw/maxresdefault.jpg"
+    alt="Agentarium Simulation Demo"
+    width="800"
+  >
+</a>
+
+<br>
+
+<a href="https://www.youtube.com/watch?v=cu-7mf62gkw">
+  ▶ Watch Simulation Demo
+</a>
+
 ---
 
 ## 프로젝트 소개
